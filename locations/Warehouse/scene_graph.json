@@ -1,0 +1,41 @@
+{
+    "nodes": [
+        {
+            "type": "narrow passage",
+            "id": "Aisle1 (1)"
+        },
+        {
+            "type": "intersection",
+            "id": "Aisle2 (2)"
+        },
+        {
+            "type": "open space",
+            "id": "Aisle3 (3)"
+        },
+        {
+            "type": "wide passage",
+            "id": "Aisle (4)"
+        },
+        {
+            "type": "open space",
+            "id": "Hall (5)"
+        },
+        {
+            "type": "narrow passage",
+            "id": "Aisle6 (6)"
+        },
+        {
+            "type": "narrow passage",
+            "id": "Aisle7 (7)"
+        }
+    ],
+    "links": [
+        "Aisle1 (1)<->Hall (5)",
+        "Aisle2 (2)<->Aisle3 (3)",
+        "Aisle2 (2)<->Hall (5)",
+        "Aisle3 (3)<->Hall (5)",
+        "Aisle (4)<->Hall (5)",
+        "Hall (5)<->Aisle6 (6)",
+        "Hall (5)<->Aisle7 (7)"
+    ]
+}
