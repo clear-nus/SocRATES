@@ -16,7 +16,7 @@ VERTEXAI_PROJECT_ID = None
 VERTEXAI_REGION = None
 VERTEXAI_API_KEY = None
 
-LOCATION = 'Warehouse'
+LOCATION = 'Warehouse_fixed'
 CONTEXT = """Robot is a delivery bot in a small warehouse. There are employees performing daily duties walking around the warehouse."""
 TASK = """Guide a human to a rack for inventory check."""
 

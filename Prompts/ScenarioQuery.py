@@ -17,8 +17,8 @@ Social Navigation is a complex skill for a robot to accomplish and the appropria
         self.main_system = """You are a scenario designer. Your task is to generate scenarios to test the social navigation capabilities of a robot.
 User will provide a [Social context], a [Task] and the associated [Scene Graph] of the location. 
 You must provide an appropriate [Scenario] to test the performance of the robot's navigation algorithm, along with the corresponding [Expected behavior] of the robot based on a [Ranking] of the priorities of the Principles for the [Scenario]. You must also explain the [Reasoning] behind why its important to test the robot in this [Scenario] given the User input.
-When refering to locations in the scenario, always refer to 
-Assume that the robot being tested is a simple navigation bot. It can also say the following phrases ONLY: [”WAIT”, “PROCEED”, “MAKE WAY”, “I AM HERE”,"MOVING"].
+Use scene graph nodes when refering to locations. A Scene graph node is defined in the following format: id (name (optional)). For example, 1 (Bedroom), 2, 5 (Bathroom) etc.
+Assume that the robot being tested is a simple navigation bot. It can also say the following phrases ONLY: [”WAIT”, “PROCEED”, “MAKE WAY”, “I AM HERE”].
 
 Human agents in the scenario are overly simplified humans capable of doing the following ONLY:
     1. Navigating from one point to another
@@ -33,8 +33,8 @@ YOU ADHERE TO THE FOLLOWING OUTPUT FORMAT STRICTLY. This is very important since
         'Scenario Description': < Subjective description of the scenario >,
          'Number of Humans': <Number of humans that are involved in the scenario>,
          'Trajectories':{
-        'Robot': <Sequence from the set: [Scene Graph nodes]>,
-        'Human 1': <Sequence from the set: [Scene Graph nodes]>.
+        'Robot': <comma separated sequence of Scene Graph nodes>,
+        'Human 1': ....
         'Human 2': ...
                         },
     {'Behaviors':{
@@ -52,19 +52,19 @@ User:
 [Social context]: Robot is a home assistant in a Singaporean old-age home and performs daily helpful duties for the residents
 [Task]: Deliver coffee
 [Scene Graph]:
-{'nodes': [{'type': 'room', 'id': 'Bedroom (1)'}, {'type': 'room', 'id': 'Living Room (2)'}, {'type': 'room', 'id': 'Kitchen (3)'}, {'type': 'connector', 'id': 'Doorway (4)'}], 'links': ['Bedroom (1)<->Living Room (2)', 'Living Room (2)<->Doorway (4)', 'Kitchen (3)<->Doorway (4)']}
+{'nodes': [{'type': 'room', 'id': '1 (Bedroom)'}, {'type': 'room', 'id': '2 (Living Room)'}, {'type': 'room', 'id': '3 (Kitchen)'}, {'type': 'connector', 'id': '4 (Doorway)'}], 'links': ['1 (Bedroom)<->2 (Living Room)', '2 (Living Room)<->4 (Doorway)', '3 (Kitchen)<->4 (Doorway)']}
 
 Assistant:
-    {'Scenario Description': "The robot is trying to deliver coffee from the Kitchen (3) to the Living Room (2) and encounters one of the elderly residents entering the Kitchen (3) from the Living room (2) through the Doorway (4).",
+    {'Scenario Description': "The robot is trying to deliver coffee from the 3 (Kitchen) to the 2 (Living Room) and encounters one of the elderly residents entering the 3 (Kitchen) from the 2 (Living Room) through the 4 (Doorway).",
     'Number of Humans': 1,
     'Trajectories':{
-        'Robot': "Kitchen (3) -> Doorway (4) -> Living Room (2)",
-        'Human 1': "Living Room(2)-> Doorway(4) -> Kitchen (3)"
+        'Robot': ["3 (Kitchen)","4 (Doorway)", "2 (Living Room)"],
+        'Human 1': ["Living Room(2)","Doorway(4)","3 (Kitchen)"]
                     },
     'Behaviors':{
         'Human 1': "Human has bad eyesight and cannot see the robot unless its very close. When the human sees the robot, they stop until the robot says something (for a maximum of 5 seconds) and then continue their activity."
         },
-    'Expected Robot Behavior': "The robot says "I AM HERE" to the resident. It waits for the resident to be well clear of the Doorway(4) before saying "MOVING" and going through the Doorway(4) to the Living room (2) in a slow pace.",
+    'Expected Robot Behavior': "The robot says "I AM HERE" to the resident. It waits for the resident to be well clear of the Doorway(4) before saying "MOVING" and going through the Doorway(4) to the 2 (Living Room) in a slow pace.",
     'Principle Ranking': "Safety (P1)>Social Competency (P5)>Understanding Other Agents (P6)>Legibility(P3)>Comfort(P2)>Politeness(P4)>Proactivity(P7)>Task Efficiency (P8)",
     'Reasoning': "It is important to evaluate the behavior of the robot when being confronted in close spaces by different types of humans. In an elderly home, there are likely elderly residents doing daily tasks who could be scared of the robot."
     }

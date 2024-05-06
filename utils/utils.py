@@ -1,3 +1,4 @@
+
 import base64
 import json
 import tiktoken
@@ -7,9 +8,37 @@ import re
 import PIL.Image as Image
 from io import BytesIO
 from collections.abc import Mapping
-
+import networkx as nx
+from PIL import Image as PILImage
+import os
+def filter_scene_graph(scene_graph, node_type_to_remove):
+    #for simple serialized dict graphs
+    G = {'nodes':[],'links':[]}
+    filtered_nodes = []
+    # Add nodes to the graph if they are not of the type to remove
+    for node in scene_graph['nodes']:
+        if node['type'] != node_type_to_remove:
+            G['nodes'].append(node)
+            filtered_nodes.append(str(node['id']))
+    
+    # Add edges to the graph, only if both nodes in an edge are still in the graph
+    for edge in scene_graph['links']:
+        node1, node2 = edge.split('<->')
+        if node1 in filtered_nodes and node2 in filtered_nodes:
+           G['links'].append(edge)
+    
+    # Create the new scene graph structure to return
+    return G
+def load_imgs_for_prompt(img_path):
+    dims = PILImage.open(img_path).size
+    img_cost = calculate_image_token_cost(dims)
+    print(f'{dims}:{img_cost}')
+    with open(img_path, "rb") as image_file:
+        encoded_img = base64.b64encode(image_file.read()).decode('utf-8')
+    return encoded_img,img_cost
+        
 #https://github.com/openai/tiktoken/issues/250
-def calculate_image_token_cost(image, detail="auto"):
+def calculate_image_token_cost(dims, detail="auto"):
     # Constants
     LOW_DETAIL_COST = 85
     HIGH_DETAIL_COST_PER_TILE = 170
@@ -22,9 +51,10 @@ def calculate_image_token_cost(image, detail="auto"):
     if detail == "low":
         # Low detail images have a fixed cost
         return LOW_DETAIL_COST
+    
     elif detail == "high":
         # Calculate token cost for high detail images
-        width, height = get_image_dims(image)
+        width, height = dims
         # Check if resizing is needed to fit within a 2048 x 2048 square
         if max(width, height) > 2048:
             # Resize the image to fit within a 2048 x 2048 square
@@ -106,25 +136,6 @@ def encode_image(image_path):
 ### BT Related
 
 ### Function to add a custom node to Hunavsim
-def add_custom_bt_node():
-    
-    #Add node to extended_bt_functions.hpp to header file
-    
-    #Add node to extended_bt_functions.cpp
-    
-    #Add node ports to extended_bt_node.cpp
-    
-    #Add node register to extended_bt_node.cpp
-    
-    pass
-
-def add_agentmanager_function():
-    
-    #Add function definition to extended_agent_manager.hpp file
-    
-    #Add function to extended_agent_manager.cpp file
-    
-    pass
 
 def createHuman(agents_file,bt_file,params):
     #Edit Agents.yaml

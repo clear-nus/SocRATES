@@ -9,32 +9,36 @@ class FLocationQuery(BasePrompt):
         super().__init__()
         
         self.background = """
-A scenario for humans and robot is being created in a social-navigation simulator. The location where the scenario takes place has the following scene graph, where the nodes specify rough locations: 
-[Scene Graph]:<SCENE GRAPH>
-The Scenario is described below, with the number of humans involved and their trajectories defined using the scene graph nodes.
+A scenario for humans and robot is being created in a social-navigation simulator. The location where the scenario takes place has the following scene graph: 
+<SCENE GRAPH>
+
+The Scenario is described below, with the number of humans involved and their ROUGH trajectories defined using scene graph nodes.
 [Scenario Description]: <SCENARIO DESCRIPTION>
 [Number of Humans]: <NUMBER OF HUMANS>
 <TRAJECTORIES>
 
-The images show finer locations around the scene graph nodes.
-Your job is to specify the start, goal and waypoints for the Robot and Humans such that the Described Scenario is guaranteed to happen as well as group membership for the humans if required. The humans and the robot start moving at the same time. Assume they move at the same speed.
-A human can be a member of a single group only. Groups are identified by a single integer called group_id. If a human is not a member of any group, then set group_id = -1. Thus, humans with the same group_id dynamically form a group in the simulation.
-When specifying finer locations, use the following format: (CoarseLocation-FineLocation). For example, 1A, 2B etc.
+The images show more scene graph nodes around nodes describing the rough trajectories as well as an overhead view with all the locations. Note that each "fine" location is described by the parent-node and a letter (e.g. 1A, 2B).
+Your job is to specify fine trajectories through the "fine" scene graph nodes for each rough trajectory as well as group membership for the humans (if required) such that the described Scenario is guaranteed to happen.
+Assume that the humans and the robot start moving at the same time and they move at the same speed.
+Rules:
+    - A human can be a member of a single group only. 
+    - Groups are identified by a single integer called group_id and Humans with the same group_id will dynamically form a group in the simulation.
+    - For a lone human, set group_id = -1 and some other number for all the humans belonging to the same group.
+    - Only specify waypoints in the trajectory with nodes from the scene graph with type="child"
 """
         self.output_format = """
 STRICTLY ADHERE TO THE FOLLOWING FORMAT FOR THE OUTPUT. Do not include any explanation.
 
 {'Trajectory':
     {
-        'Robot': "Start -> Goal",
-        'Human 1': "Start ->  Waypoints -> Goal",
-        'Human 2': "Start -> Waypoints -> Goal",
+        'Human 1': <comma-separated list of child scene graph nodes>,
+        'Human 2': ...,
         ...
     },
 'Group':
     {
-        'Human 1': -1,
-        'Human 2': 0,
+        'Human 1': <group_id>,
+        'Human 2': <group_id>,
        ...
     }
 }"""    

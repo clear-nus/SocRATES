@@ -3,6 +3,7 @@ import os
 import json
 import pprint
 import re
+from PIL import Image as PILImage
 from Prompts import *
 import pickle as pkl
 import yaml
@@ -26,9 +27,10 @@ model = Model(config = dict(
 with open(os.path.join('locations',LOCATION,'scene_graph.json'),'r') as f:
     scene_graph = json.load(f)
 scQ = ScenarioQuery()
+coarse_scene_graph = utils.filter_scene_graph(scene_graph,'child')
 scQ_full_prompt = scQ.get_full_prompt(context=CONTEXT,
     task=TASK,
-    graph=scene_graph
+    graph=coarse_scene_graph
 )
 print(f'Scenario Context: {CONTEXT}')
 print(f'Scenario Task: {TASK}')
@@ -100,22 +102,26 @@ reasoning_desc = scq_response_json['Reasoning']
 coarse_locations = []
 for k,v in traj_desc.items():
     for loc in v:
-        match = re.search(r"\((\d+)\)", loc)
-        if match:
-            l = int(match.group(1))
-            if l not in coarse_locations:
-                coarse_locations.append(l)
+        if loc not in coarse_locations:
+            coarse_locations.append(loc)
+print(f'coarse_locations:{coarse_locations}')
 print(f'================QUERYING LOCATIONS:================')
 print(f'Coarse_locations:{coarse_locations}')
 
 # %%
 coarse_loc_imgs = []
-[coarse_loc_imgs.append(os.path.join('locations',LOCATION,f'{img}.png')) for img in coarse_locations]
-#for loc in coarse_locations:
-#    coarse_loc_imgs[loc] = utils.encode_image(os.path.join('locations',location,f'{loc}.png'))
-#coarse_loc_imgs['overhead'] = utils.encode_image(os.path.join('locations',location,'overhead_annotated.png'))
-#coarse_loc_imgs = 
-coarse_loc_imgs.append(os.path.join('locations',LOCATION,'overhead_annotated.png'))
+cost = 0
+for img_name in coarse_locations:
+    img_path = os.path.join('locations',LOCATION,f'{img_name}.png')
+    encoded_img,img_cost = utils.load_imgs_for_prompt(img_path)
+    coarse_loc_imgs.append(encoded_img)
+    cost+=img_cost
+
+img_path = os.path.join('locations',LOCATION,'scene_graph.png')
+encoded_img,img_cost = utils.load_imgs_for_prompt(img_path)
+coarse_loc_imgs.append(encoded_img)
+cost+=img_cost
+print(f"Total cost for images: ${(cost / 1000.0)*0.01}")
 
 # %% [markdown]
 # ### Fine Locations Query
@@ -158,9 +164,8 @@ print(json.dumps(flq_response_json,indent=4))
 # %%
 trajectories = {}
 for k,v in flq_response_json['Trajectory'].items():
-    trajectories[k] = []
-    for loc in v.split(' -> '):
-        trajectories[k].append(loc.split('-')[1])
+    trajectories[k] = v.split(',')
+print(trajectories)
 
 print(f'OUTPUT TRAJECTORIES:{trajectories}')
 print(f'GROUP:{flq_response_json["Group"]}')
