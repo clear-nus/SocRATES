@@ -1,0 +1,17 @@
+<root main_tree_to_execute='Human2BehaviorTree'>
+    <include path='BTRegularNav.xml'/>
+    <BehaviorTree ID='Human2BehaviorTree'>
+        <Fallback name='MainFallback'>
+            <Sequence name='RobotVisibleAndProceed'>
+                <IsRobotVisible agent_id='{id}' distance='4.0'/>
+                <RobotSays agent_id='{id}' message='2'/>
+                <FollowRobot agent_id='{id}' time_step='{dt}'/>
+            </Sequence>
+            <Sequence name='NormalActivities'>
+                <SetBlackboard output_key='agentid' value='{id}'/>
+                <SetBlackboard output_key='timestep' value='{dt}'/>
+                <SubTree ID='RegularNavTree' id='agentid' dt='timestep'/>
+            </Sequence>
+        </Fallback>
+    </BehaviorTree>
+</root>

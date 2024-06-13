@@ -1,0 +1,25 @@
+<root main_tree_to_execute='HumanLookAndNavigateTree'>
+    <include path='BTRegularNav.xml'/>
+    <BehaviorTree ID='HumanLookAndNavigateTree'>
+        <Fallback name='MainFallback'>
+            <Sequence name='WaitAndLookSequence'>
+                <Inverter>
+                    <RobotMoved agent_id='{id}'/>
+                </Inverter>
+                <Fallback name='LookAndWaitFallback'>
+                    <Sequence name='LookAtRobotSequence'>
+                        <TimeExpiredCondition seconds='10' ts='{dt}' only_once='false'/>
+                        <LookAtRobot agent_id='{id}' />
+                    </Sequence>
+                    <MakeGesture agent_id='{id}' message='0'/>
+                </Fallback>
+            </Sequence>
+            <Sequence name='RegNav'>
+                <MakeGesture agent_id='{id}' message='0'/>
+                <SetBlackboard output_key='agentid' value='{id}' />
+                <SetBlackboard output_key='timestep' value='{dt}' />
+                <SubTree ID='RegularNavTree' id='agentid' dt='timestep' />
+            </Sequence>
+        </Fallback>
+    </BehaviorTree>
+</root>

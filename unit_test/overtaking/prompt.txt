@@ -1,0 +1,1105 @@
+You are an expert floor planner and a software engineer.
+The image shows a part of a warehouse which is represented by a scene graph. A scene graph which is a graph with nodes (numbered red circles) representing locations and edges (blue lines) connecting them. A person can only move from one node to another if the two nodes are connected by an edge. The scene graph in json file format is also given below, where each node has an unique id, a type, the pixel position of the node in the image (pos). The type of a node is one among [INTERSECTION, PASSAGEWAY, NARROW PASSAGEWAY, OPEN AREA, BLIND CORNER, child]. The non-child nodes represent larger areas while the child nodes represent specific places within a larger area. The graph is bidirectional and each edge is also represented with the edge list 'links' in the json file with double sided arrows '<->'.  Remember that a node can only be reached from another node if they have an edge between them in the scene graph json. In the image, the traversible area is in gray color. For example. a person cannot walk over the yellow or brown region. 
+SCENE GRAPH JSON:
+{
+    "nodes": [
+        {
+            "type": "PASSAGEWAY",
+            "pos": [
+                28,
+                152
+            ],
+            "id": 1
+        },
+        {
+            "type": "child",
+            "pos": [
+                31,
+                84
+            ],
+            "id": "1A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                22,
+                226
+            ],
+            "id": "1B"
+        },
+        {
+            "type": "BLIND CORNER",
+            "pos": [
+                22,
+                316
+            ],
+            "id": 2
+        },
+        {
+            "type": "child",
+            "pos": [
+                25,
+                242
+            ],
+            "id": "2A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                90,
+                312
+            ],
+            "id": "2B"
+        },
+        {
+            "type": "INTERSECTION",
+            "pos": [
+                190,
+                322
+            ],
+            "id": 3
+        },
+        {
+            "type": "child",
+            "pos": [
+                104,
+                312
+            ],
+            "id": "3A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                187,
+                230
+            ],
+            "id": "3B"
+        },
+        {
+            "type": "child",
+            "pos": [
+                284,
+                323
+            ],
+            "id": "3C"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "pos": [
+                184,
+                162
+            ],
+            "id": 4
+        },
+        {
+            "type": "child",
+            "pos": [
+                185,
+                255
+            ],
+            "id": "4A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                186,
+                76
+            ],
+            "id": "4B"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "pos": [
+                107,
+                320
+            ],
+            "id": 5
+        },
+        {
+            "type": "child",
+            "pos": [
+                33,
+                320
+            ],
+            "id": "5A"
+        },
+        {
+            "type": "child",
+            "pos":[   
+                334,
+                326
+            ],
+            "id": 6
+        },
+        {
+            "type": "child",
+            "pos": [
+                236,
+                319
+            ],
+            "id": "6A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                420,
+                319
+            ],
+            "id": "6B"
+        },
+        {
+            "type": "INTERSECTION",
+            "pos": [
+                500,
+                312
+            ],
+            "id": 7
+        },
+        {
+            "type": "child",
+            "pos": [
+                416,
+                313
+            ],
+            "id": "7A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                597,
+                318
+            ],
+            "id": "7B"
+        },
+        {
+            "type": "child",
+            "pos": [
+                509,
+                230
+            ],
+            "id": "7C"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "pos": [
+                506,
+                159
+            ],
+            "id": 8
+        },
+        {
+            "type": "child",
+            "pos": [
+                502,
+                232
+            ],
+            "id": "8A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                506,
+                76
+            ],
+            "id": "8B"
+        },
+        {
+            "type": "NARROW PASSAGEWAY",
+            "pos": [
+                656,
+                152
+            ],
+            "id": 9
+        },
+        {
+            "type": "child",
+            "pos": [
+                654,
+                62
+            ],
+            "id": "9A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                660,
+                221
+            ],
+            "id": "9B"
+        },
+        {
+            "type": "NARROW PASSAGEWAY",
+            "pos": [
+                771,
+                158
+            ],
+            "id": 10
+        },
+        {
+            "type": "child",
+            "pos": [
+                775,
+                63
+            ],
+            "id": "10A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                768,
+                239
+            ],
+            "id": "10B"
+        },
+        {
+            "type": "NARROW PASSAGEWAY",
+            "pos": [
+                884,
+                142
+            ],
+            "id": 11
+        },
+        {
+            "type": "child",
+            "pos": [
+                877,
+                51
+            ],
+            "id": "11A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                880,
+                222
+            ],
+            "id": "11B"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "pos": [
+                1006,
+                154
+            ],
+            "id": 12
+        },
+        {
+            "type": "child",
+            "pos": [
+                990,
+                60
+            ],
+            "id": "12A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                996,
+                250
+            ],
+            "id": "12B"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "pos": [
+                1116,
+                147
+            ],
+            "id": 13
+        },
+        {
+            "type": "child",
+            "pos": [
+                1126,
+                236
+            ],
+            "id": "13A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                1112,
+                56
+            ],
+            "id": "13B"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "pos": [
+                1248,
+                151
+            ],
+            "id": 14
+        },
+        {
+            "type": "child",
+            "pos": [
+                1236,
+                65
+            ],
+            "id": "14A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                1234,
+                245
+            ],
+            "id": "14B"
+        },
+        {
+            "type": "INTERSECTION",
+            "pos": [
+                662,
+                315
+            ],
+            "id": 15
+        },
+        {
+            "type": "child",
+            "pos": [
+                558,
+                320
+            ],
+            "id": "15A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                660,
+                219
+            ],
+            "id": "15B"
+        },
+        {
+            "type": "child",
+            "pos": [
+                758,
+                317
+            ],
+            "id": "15C"
+        },
+        {
+            "type": "INTERSECTION",
+            "pos": [
+                779,
+                319
+            ],
+            "id": 16
+        },
+        {
+            "type": "child",
+            "pos": [
+                683,
+                325
+            ],
+            "id": "16A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                883,
+                317
+            ],
+            "id": "16B"
+        },
+        {
+            "type": "child",
+            "pos": [
+                772,
+                213
+            ],
+            "id": "16C"
+        },
+        {
+            "type": "INTERSECTION",
+            "pos": [
+                892,
+                315
+            ],
+            "id": 17
+        },
+        {
+            "type": "child",
+            "pos": [
+                888,
+                212
+            ],
+            "id": "17A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                802,
+                311
+            ],
+            "id": "17B"
+        },
+        {
+            "type": "child",
+            "pos": [
+                990,
+                320
+            ],
+            "id": "17C"
+        },
+        {
+            "type": "INTERSECTION",
+            "pos": [
+                1002,
+                308
+            ],
+            "id": 18
+        },
+        {
+            "type": "child",
+            "pos": [
+                887,
+                321
+            ],
+            "id": "18A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                987,
+                210
+            ],
+            "id": "18B"
+        },
+        {
+            "type": "child",
+            "pos": [
+                1087,
+                328
+            ],
+            "id": "18C"
+        },
+        {
+            "type": "INTERSECTION",
+            "pos": [
+                1122,
+                314
+            ],
+            "id": 19
+        },
+        {
+            "type": "child",
+            "pos": [
+                1027,
+                320
+            ],
+            "id": "19A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                1115,
+                200
+            ],
+            "id": "19B"
+        },
+        {
+            "type": "child",
+            "pos": [
+                1216,
+                320
+            ],
+            "id": "19C"
+        },
+        {
+            "type": "BLIND CORNER",
+            "pos": [
+                1216,
+                323
+            ],
+            "id": 20
+        },
+        {
+            "type": "child",
+            "pos": [
+                1117,
+                317
+            ],
+            "id": "20A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                1249,
+                229
+            ],
+            "id": "20B"
+        },
+        {
+            "type": "OPEN AREA",
+            "pos": [
+                688,
+                506
+            ],
+            "id": 21
+        },
+        {
+            "type": "child",
+            "pos": [
+                637,
+                434
+            ],
+            "id": "21A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                757,
+                438
+            ],
+            "id": "21B"
+        },
+        {
+            "type": "child",
+            "pos": [
+                761,
+                559
+            ],
+            "id": "21C"
+        },
+        {
+            "type": "child",
+            "pos": [
+                612,
+                563
+            ],
+            "id": "21D"
+        },
+        {
+            "type": "OPEN AREA",
+            "pos": [
+                872,
+                490
+            ],
+            "id": 22
+        },
+        {
+            "type": "child",
+            "pos": [
+                830,
+                431
+            ],
+            "id": "22A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                953,
+                432
+            ],
+            "id": "22B"
+        },
+        {
+            "type": "child",
+            "pos": [
+                961,
+                548
+            ],
+            "id": "22C"
+        },
+        {
+            "type": "child",
+            "pos": [
+                832,
+                563
+            ],
+            "id": "22D"
+        },
+        {
+            "type": "OPEN AREA",
+            "pos": [
+                491,
+                419
+            ],
+            "id": 23
+        },
+        {
+            "type": "child",
+            "pos": [
+                412,
+                428
+            ],
+            "id": "23A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                485,
+                336
+            ],
+            "id": "23B"
+        },
+        {
+            "type": "child",
+            "pos": [
+                560,
+                435
+            ],
+            "id": "23C"
+        },
+        {
+            "type": "OPEN AREA",
+            "pos": [
+                276,
+                424
+            ],
+            "id": 24
+        },
+        {
+            "type": "child",
+            "pos": [
+                184,
+                390
+            ],
+            "id": "24A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                369,
+                422
+            ],
+            "id": "24B"
+        },
+        {
+            "type": "child",
+            "pos": [
+                289,
+                348
+            ],
+            "id": "24C"
+        },
+        {
+            "type": "child",
+            "pos": [
+                236,
+                472
+            ],
+            "id": "24D"
+        },
+        {
+            "type": "OPEN AREA",
+            "pos": [
+                1080,
+                435
+            ],
+            "id": 25
+        },
+        {
+            "type": "child",
+            "pos": [
+                1009,
+                488
+            ],
+            "id": "25A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                1193,
+                489
+            ],
+            "id": "25B"
+        },
+        {
+            "type": "child",
+            "pos": [
+                1090,
+                365
+            ],
+            "id": "25C"
+        },
+        {
+            "type": "child",
+            "pos": [
+                1178,
+                376
+            ],
+            "id": "25D"
+        },
+        {
+            "type": "BLIND CORNER",
+            "pos": [
+                76,
+                671
+            ],
+            "id": 26
+        },
+        {
+            "type": "child",
+            "pos": [
+                73,
+                779
+            ],
+            "id": "26A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                171,
+                660
+            ],
+            "id": "26B"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "pos": [
+                243,
+                656
+            ],
+            "id": 27
+        },
+        {
+            "type": "child",
+            "pos": [
+                141,
+                658
+            ],
+            "id": "27A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                319,
+                657
+            ],
+            "id": "27B"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "pos": [
+                403,
+                662
+            ],
+            "id": 28
+        },
+        {
+            "type": "child",
+            "pos": [
+                311,
+                658
+            ],
+            "id": "28A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                497,
+                667
+            ],
+            "id": "28B"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "pos": [
+                594,
+                659
+            ],
+            "id": 29
+        },
+        {
+            "type": "child",
+            "pos": [
+                496,
+                663
+            ],
+            "id": "29A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                688,
+                657
+            ],
+            "id": "29B"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "pos": [
+                760,
+                659
+            ],
+            "id": 30
+        },
+        {
+            "type": "child",
+            "pos": [
+                638,
+                665
+            ],
+            "id": "30A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                861,
+                667
+            ],
+            "id": "30B"
+        },
+        {
+            "type": "child",
+            "pos": [
+                762,
+                604
+            ],
+            "id": "30C"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "pos": [
+                935,
+                655
+            ],
+            "id": 31
+        },
+        {
+            "type": "child",
+            "pos": [
+                831,
+                668
+            ],
+            "id": "31A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                929,
+                568
+            ],
+            "id": "31B"
+        },
+        {
+            "type": "child",
+            "pos": [
+                1032,
+                664
+            ],
+            "id": "31C"
+        },
+        {
+            "type": "BLIND CORNER",
+            "pos": [
+                1206,
+                654
+            ],
+            "id": 32
+        },
+        {
+            "type": "child",
+            "pos": [
+                1103,
+                659
+            ],
+            "id": "32A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                1223,
+                560
+            ],
+            "id": "32B"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "pos": [
+                1216,
+                528
+            ],
+            "id": 33
+        },
+        {
+            "type": "child",
+            "pos": [
+                1232,
+                492
+            ],
+            "id": "33A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                1222,
+                622
+            ],
+            "id": "33B"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "pos": [
+                74,
+                786
+            ],
+            "id": 34
+        },
+        {
+            "type": "child",
+            "pos": [
+                75,
+                834
+            ],
+            "id": "34A"
+        },
+        {
+            "type": "child",
+            "pos": [
+                81,
+                694
+            ],
+            "id": "34B"
+        }
+    ],
+    "links": [
+        "1<->1A",
+        "1<->1B",
+        "1<->2",
+        "2<->2A",
+        "2<->2B",
+        "2<->5",
+        "3<->3A",
+        "3<->3B",
+        "3<->3C",
+        "3<->5",
+        "3<->4",
+        "3<->6",
+        "3<->24",
+        "4<->4A",
+        "4<->4B",
+        "5<->5A",
+        "5<->5B",
+        "6<->6A",
+        "6<->6B",
+        "6<->24",
+        "6<->7",
+        "6<->23",
+        "7<->7A",
+        "7<->7B",
+        "7<->7C",
+        "7<->8",
+        "7<->23",
+        "7<->15",
+        "8<->8A",
+        "8<->8B",
+        "9<->9A",
+        "9<->9B",
+        "9<->15",
+        "10<->10A",
+        "10<->10B",
+        "10<->16",
+        "11<->11A",
+        "11<->11B",
+        "11<->17",
+        "12<->12A",
+        "12<->12B",
+        "12<->18",
+        "13<->13A",
+        "13<->13B",
+        "13<->19",
+        "14<->14A",
+        "14<->14B",
+        "14<->20",
+        "15<->15A",
+        "15<->15B",
+        "15<->15C",
+        "15<->16",
+        "15<->21",
+        "16<->16A",
+        "16<->16B",
+        "16<->16C",
+        "16<->17",
+        "16<->22",
+        "16<->21",
+        "17<->17A",
+        "17<->17B",
+        "17<->17C",
+        "17<->18",
+        "17<->22",
+        "17<->25",
+        "18<->18A",
+        "18<->18B",
+        "18<->18C",
+        "18<->19",
+        "18<->25",
+        "19<->19A",
+        "19<->19B",
+        "19<->19C",
+        "19<->20",
+        "19<->25",
+        "20<->20A",
+        "20<->20B",
+        "20<->25",
+        "21<->21A",
+        "21<->21B",
+        "21<->21C",
+        "21<->21D",
+        "21<->23",
+        "21<->22",
+        "21<->29",
+        "21<->30",
+        "22<->22A",
+        "22<->22B",
+        "22<->22C",
+        "22<->22D",
+        "22<->25",
+        "22<->30",
+        "22<->31",
+        "23<->23A",
+        "23<->23B",
+        "23<->23C",
+        "23<->24",
+        "24<->24A",
+        "24<->24B",
+        "24<->24C",
+        "24<->24D",
+        "25<->25A",
+        "25<->25B",
+        "25<->25C",
+        "25<->25D",
+        "26<->26A",
+        "26<->26B",
+        "26<->27",
+        "26<->34",
+        "27<->27A",
+        "27<->27B",
+        "27<->28",
+        "28<->28A",
+        "28<->28B",
+        "28<->29",
+        "29<->29A",
+        "29<->29B",
+        "29<->30",
+        "30<->30A",
+        "30<->30B",
+        "30<->30C",
+        "30<->31",
+        "31<->31A",
+        "31<->31B",
+        "31<->31C",
+        "31<->32",
+        "32<->32A",
+        "32<->32B",
+        "32<->33",
+        "33<->33A",
+        "33<->33B",
+        "34<->34A",
+        "34<->34B"
+    ]
+}
+
+
+Let's initialize a simulator (like Gazebo) with this warehouse world and try to orchestrate the following scenario: 
+
+While the robot is transporting a box through a passageway, it encounters a human employee coming from behind who attempts to overtake the robot.
+
+Describe their trajectories as a sequence of nodes. Remember that both humans and the robot can only walk from one node to another if there is an edge between the nodes. 
+Thus, you should only provide a path where the subsequent nodes are connected by an edge.
+For example, the human/robot cannot directly walk from Node 8 to Node 9 or Node 2 to Node 3 since Node 8 is not connected to Node 9 and Node 2 is not Connected to Node 3. But a human/robot can walk from Node 21 to 15 or Node 16 to Node 10 because these are connected nodes.
+You can also use the pixel position information in the scene to pick appropriate locations for the user's request. 
+Explain your reasoning.

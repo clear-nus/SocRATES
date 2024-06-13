@@ -1,4 +1,3 @@
-# %%
 import os
 import json
 import pprint
@@ -12,43 +11,47 @@ from utils.models import *
 import copy
 import subprocess
 
-# %% [markdown]
-# ### Initialize Model
 
-# %%
-model = Model(config = dict(
+#### Initialize Model
+model = GPTModel(config = dict(
     MODEL_NAME = MODEL
 ))
 
-# %% [markdown]
-# ### Query for Scenario
+#### Query for Scenario ####
 
-# %%
+# Process Scene graph
 with open(os.path.join('locations',LOCATION,'scene_graph.json'),'r') as f:
     scene_graph = json.load(f)
+
+scgraph = utils.SceneGraph(scene_graph)
+encoded_img = utils.encode_image(os.path.join('locations',LOCATION,'scene_graph.png'))
+node_types = []
+for node in scgraph.get_parent_nodes():
+    if scgraph.graph.nodes[node]['type'] not in node_types:
+        node_types.append(scgraph.graph.nodes[node]['type'])
+print(node_types)
+
 scQ = ScenarioQuery()
-coarse_scene_graph = utils.filter_scene_graph(scene_graph,'child')
-scQ_full_prompt = scQ.get_full_prompt(context=CONTEXT,
+scQ_full_prompt = scQ.get_full_prompt(
+    context=CONTEXT,
     task=TASK,
-    graph=coarse_scene_graph
+    rough_scenario=ROUGH_SCENARIO
 )
 print(f'Scenario Context: {CONTEXT}')
 print(f'Scenario Task: {TASK}')
-# print(scQ_txt_payload[1]['content'][0]['text'])
-# print(f"""Num tokens from main message: {utils.num_tokens_from_messages(scQ_txt_payload[1],MODEL)}""")
 
-# %% [markdown]
-# ### Get Scenario Proposal from LLM
-
-# %%
-model.get_payload(content = scQ_full_prompt)
-
-while True:# %%
+#### Get Scenario Proposal from LLM
+while True:
     if QUERY_SC:
         print("Querying LLM for scenario")
+        
         payload = model.get_payload(content = scQ_full_prompt)
-        response = model.get_response(messages = payload,format = "json_object")
+        response = model.get_response(messages = payload,format = "json_object",expected_keys=scQ.required_output_keys)
+        
         scq_response_json = json.loads(response)
+        key_list = list(scq_response_json.keys())
+        key_list_lower = [x.lower() for x in key_list]    
+        
         if SAVE_SC_RESPONSE:
             print("Saving scenario response")
             with open('responses/reponse_sc.json','w') as f:
@@ -63,14 +66,10 @@ while True:# %%
     print(json.dumps(scq_response_json,indent=4))
     user_input = input("Continue ? (yes/no): ")
     if user_input.lower() == "yes" or user_input.lower() == "y":
-        
         print("Continuing...")
         break
         
-
-
-
-# %%
+#### Use Handcrafted Scenario
 if USE_HANDCRAFTED_SCENARIO:
     print('USING HANDCRAFTED SCENARIO')
     print('Scenario Description:')
@@ -98,62 +97,87 @@ expected_robot_behav_desc = scq_response_json['Expected Robot Behavior']
 pranking_desc = scq_response_json['Principle Ranking'] 
 reasoning_desc = scq_response_json['Reasoning'] 
 
-# %%
-coarse_locations = []
-for k,v in traj_desc.items():
-    for loc in v:
-        if loc not in coarse_locations:
-            coarse_locations.append(loc)
-print(f'coarse_locations:{coarse_locations}')
-print(f'================QUERYING LOCATIONS:================')
-print(f'Coarse_locations:{coarse_locations}')
 
-# %%
-coarse_loc_imgs = []
-cost = 0
-for img_name in coarse_locations:
-    img_path = os.path.join('locations',LOCATION,f'{img_name}.png')
-    encoded_img,img_cost = utils.load_imgs_for_prompt(img_path)
-    coarse_loc_imgs.append(encoded_img)
-    cost+=img_cost
-
-img_path = os.path.join('locations',LOCATION,'scene_graph.png')
-encoded_img,img_cost = utils.load_imgs_for_prompt(img_path)
-coarse_loc_imgs.append(encoded_img)
-cost+=img_cost
-print(f"Total cost for images: ${(cost / 1000.0)*0.01}")
-
-# %% [markdown]
-# ### Fine Locations Query
-
-# %%
-flocationQ = FLocationQuery(
-    loc_imgs = coarse_loc_imgs
-)
+#### Locations Query
+flocationQ = FLocationQuery()
 
 flq_full_prompt = flocationQ.get_full_prompt(
-    scene_graph = str(scene_graph),
+    scene_graph = scene_graph,
     num_humans = num_humans,
     traj_desc = traj_desc,
     sc_desc = scenario_desc
 )
-
-# %%
 pprint.pprint(flq_full_prompt)
 
-# %% [markdown]
-# ### Get Fine Locations from LLM
-
-# %%
+#### Get Fine Locations from LLM
 if QUERY_LOC:
     print("Querying LLM for fine locations")
-    payload = model.get_payload(content = flq_full_prompt)
-    response = model.get_response(messages = payload,format = 'json_object')
-    flq_response_json = json.loads(response)
-    if SAVE_LOC_RESPONSE:
-        print("Saving fine location response")
-        with open('responses/reponse_loc.json','w') as f:
-            json.dump(flq_response_json,f)
+    valid_trajectories = 0
+    while valid_trajectories!=(num_humans+1):
+        retries = -1
+        payload = model.get_payload(content = flq_full_prompt)
+        while retries <=3: #retry until trajectories are valid (max 3)
+            response = model.get_response(messages = payload,format = 'json_object',expected_keys=flocationQ.required_output_keys)
+            flq_response_json = json.loads(response)
+            trajectories = flq_response_json['TRAJECTORIES']
+            traj_valid = True
+            #test connectivity
+            for k,v in trajectories:
+                traj_valid,errors = scgraph.isvalidtrajectory(v)
+                if not traj_valid: #requery LLM with error message
+                    valid_trajectories=0
+                    reply = f"""
+                            You made the following mistakes:
+                            <ERRORS>
+                            Retry and Return the answer in the same JSON format.
+                            """
+                    error_string = ""
+                    for err in errors:
+                        error_string+=f"There is no edge connecting {err[0]} and {err[1]}!"
+                        
+                    reply = reply.replace('<ERRORS>',error_string)
+                    payload.append(
+                        {
+                            "role":"assistant",
+                            "content":[
+                                {
+                                    "type":"text",
+                                    "text": response.choices[0].message.content
+                                }
+                            ]
+                        }    
+                        )
+                    payload.append({
+                            "role": "user", 
+                            "content": [
+                                {
+                                    "type":"text",
+                                    "text": reply
+                                }
+                                    ]
+                                }
+                                )
+                    
+                    retries+=1
+                    break
+                else:
+                    valid_trajectories+=1
+        
+        if valid_trajectories == num_humans+1:
+            break
+    
+              
+    world_trajectories = {}        
+    for k,v in trajectories.items():
+        world_trajectories[k] = []
+        for l in v:
+            world_trajectories[k].append(utils.pix2world(scgraph.graph.nodes[l]['pos']))
+
+        if SAVE_LOC_RESPONSE:
+            print("Saving fine location response")
+            with open('responses/reponse_loc.json','w') as f:
+                json.dump(flq_response_json,f)
+                
 else:
     assert LOAD_LOC_RESPONSE == True
     print("Loading prior fine location response")
@@ -161,47 +185,14 @@ else:
         flq_response_json = json.load(f)
 
 print(json.dumps(flq_response_json,indent=4))
-# %%
-trajectories = {}
-for k,v in flq_response_json['Trajectory'].items():
-    trajectories[k] = v.split(',')
-print(trajectories)
 
 print(f'OUTPUT TRAJECTORIES:{trajectories}')
 print(f'GROUP:{flq_response_json["Group"]}')
 
-# %%
-### Get world location of the trajectories
-with open(os.path.join('locations',LOCATION,'annotated_world_coords.pkl'),'rb') as f:
-    flwc = pkl.load(f)
-# with open(os.path.join('locations',LOCATION,'fine_loc_world_coords.pkl'),'rb') as f:
-#     flwc = pkl.load(f)
 
-# %% [markdown]
-# annotated_positions = {}
-# starti = 1
-# for k,v in flwc.items():
-#     startc = 65    
-#     for l in v:
-#         annotated_positions[str(starti)+chr(startc)] = (l[0],-l[1])
-#         startc+=1
-#     starti+=1
-# print(annotated_positions)
-# with open(os.path.join('locations',LOCATION,'annotated_world_coords.pkl'),'wb') as f:
-#     pkl.dump(annotated_positions,f)
+##### Add fine locations to sim yaml files
 
-# %%
-trajectories_world_coords = {}
-for k,v in trajectories.items():
-    trajectories_world_coords[k] = []
-    for loc in v:
-        trajectories_world_coords[k].append(flwc[loc])
-print(trajectories_world_coords)
 
-# %% [markdown]
-# #### Add fine locations to sim yaml files
-
-# %%
 print("ADDING FINE LOCATIONS TO SIM YAML FILES")
 agents_yaml = {'hunav_loader': {'ros__parameters': {'map': LOCATION,
    'publish_people': True,
@@ -219,14 +210,14 @@ blank_human = {'id': None,
     }
 agents = {}
 
-# %%
+
 for i in range(num_humans):
     agents_yaml['hunav_loader']['ros__parameters']['agents'].append(f'agent{i}')
     agents[f'agent{i}'] = copy.deepcopy(blank_human)
     agents[f'agent{i}']['id'] = i
     agents[f'agent{i}']['behavior'] = 7+i
-    agents[f'agent{i}']['group_id'] = flq_response_json['Group'][f'Human {i+1}']
-    for j,g in enumerate(trajectories_world_coords[f'Human {i+1}']):
+    agents[f'agent{i}']['group_id'] = flq_response_json['Group ID'][f'Human {i+1}']
+    for j,g in enumerate(world_trajectories[f'Human {i+1}']):
         if j == 0:
             agents[f'agent{i}']['init_pose'] = {
                 'x':g[0],
@@ -243,20 +234,18 @@ for i in range(num_humans):
             }
 agents_yaml['hunav_loader']['ros__parameters'].update(agents)
 
-# %%
+
 with open(HUNAV_SIM_AGENTS_FILE,'w') as f:
     yaml.dump(agents_yaml,f)
 
 with open(os.path.join(HUNAV_GAZEBO_WRAPPER_DIR,'config','robot.yaml'),'w') as f:
     yaml.dump({
-    'x_pose': trajectories_world_coords['Robot'][0][0],
-    'y_pose': trajectories_world_coords['Robot'][0][1]
+    'x_pose': world_trajectories['Robot'][0][0],
+    'y_pose': world_trajectories['Robot'][0][1]
 },f)
 
-# %% [markdown]
-# ### Query LLM for BT for humans
 
-# %%
+#### Query LLM for BT for humans
 print("===================QUERYING for BTs:=================")
 custom_node_requests = []
 
@@ -268,7 +257,7 @@ for i in range(num_humans):
             print(behav_desc[f'Human {i+1}'])
             btq_full_prompt = btq.get_full_prompt(behavior = behav_desc[f'Human {i+1}'])
             payload = model.get_payload(content = btq_full_prompt)
-            response = model.get_response(messages = payload,format = 'json_object')
+            response = model.get_response(messages = payload,format = 'json_object',expected_keys=btq.required_output_keys)
             btq_response_json = json.loads(response)
             if SAVE_BT_RESPONSE:
                 print(f"Saving BT {i+1} response")
@@ -280,7 +269,7 @@ for i in range(num_humans):
             with open(f'responses/reponse_bt_{i+1}.json','r') as f:
                 btq_response_json = json.load(f)
         
-        print('================Proposed Behavior:================')    #print(btq_response_json.keys())
+        print('================Proposed Behavior:================') 
         print(json.dumps(btq_response_json,indent=4))
         
 
@@ -296,14 +285,13 @@ for i in range(num_humans):
             print(f"Wrote BT to LLMBT_{i}.xml")
             break
 
-# %% [markdown]
-# ### Query LLM for custom Nodes and Auxillary functions
 
-# %%
+#### Query LLM for custom Nodes and Auxillary functions
+'''
 print("==================QUERYING for Custom Nodes:=================")
 print(custom_node_requests)
 
-# %%
+
 for i in range(len(custom_node_requests)):
     while True:
         if QUERY_AUX:
@@ -402,10 +390,10 @@ with open(os.path.join(HUNAV_SIM_CPP_FOLDER,'extended_agent_manager.cpp'),'w') a
 with open(os.path.join(HUNAV_SIM_HPP_FOLDER,'extended_agent_manager.hpp'),'w') as f:
     f.writelines(agm_hpp)
 
-# %% [markdown]
-# ### Build Project
+'''
+#### Build Project
 
-# %%
+
 print('BUILDING PROJECT:')
 s = subprocess.getstatusoutput(f' cd ~/catkin_ws && colcon build')
 if s[0] == 0:

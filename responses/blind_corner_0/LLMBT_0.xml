@@ -1,0 +1,19 @@
+<root main_tree_to_execute="HumanAtBlindCornerTree">
+    <include path="BTRegularNav.xml"/>
+    <BehaviorTree ID="HumanAtBlindCornerTree">
+        <Fallback name="StopOrNavigateFallback">
+            <Sequence name="StopIfRobotNearbySequence">
+                <IsRobotNearby agent_id="{id}" distance="0.5"/>
+                <!-- MakeGesture message=1 to signal Wait -->
+                <MakeGesture agent_id="{id}" message="1"/>
+            </Sequence>
+            <Sequence name="RegNav">
+                <!-- Clear any gesture -->
+                <MakeGesture agent_id="{id}" message="0"/>
+                <SetBlackboard output_key="agentid" value="{id}"/>
+                <SetBlackboard output_key="timestep" value="{dt}"/>
+                <SubTree ID="RegularNavTree" id="agentid" dt="timestep"/>
+            </Sequence>
+        </Fallback>
+    </BehaviorTree>
+</root>

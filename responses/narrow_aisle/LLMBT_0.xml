@@ -1,0 +1,20 @@
+<root main_tree_to_execute = "HumanWaitUntilPathClearTree">
+    <include path="BTRegularNav.xml"/>
+    <BehaviorTree ID="HumanWaitUntilPathClearTree">
+        <Fallback name="BlockingFallback">
+            <Sequence name="WaitUntilNotBlocking">
+                <IsRobotBlocking agent_id="{id}" distance="4.0" />
+                <MakeGesture agent_id="{id}" message="1" /> <!-- Gesture 'WAIT' while blocked -->
+                <Inverter>
+                    <RobotMoved agent_id="{id}" />  
+                </Inverter>
+            </Sequence>
+            <Sequence name="RegNav">
+                <MakeGesture agent_id="{id}" message="0"/>
+                <SetBlackboard output_key="agentid" value="{id}" />
+                <SetBlackboard output_key="timestep" value="{dt}" />
+                <SubTree ID="RegularNavTree" id="agentid" dt="timestep" /> <!-- Using Subtree -->
+            </Sequence>
+        </Fallback>
+    </BehaviorTree>
+</root>

@@ -1,0 +1,21 @@
+<root main_tree_to_execute='Human3InGroupTree'>
+    <BehaviorTree ID='Human3InGroupTree'>
+        <Fallback name='ExcuseMeFallback'>
+            <Sequence name='RespondToExcuseMe'>
+                <RobotSays agent_id='{id}' message='4'/>
+                <LookAtRobot agent_id='{id}'/>
+                <WhileTrue name='AvoidRobotUntilFar'>
+                    <Fallback name='AvoidOrContinue'>
+                        <Sequence name='RobotCloseSequence'>
+                            <IsRobotNearby agent_id='{id}' distance='2.0'/>
+                            <AvoidRobot agent_id='{id}' time_step='{dt}'/>
+                        </Sequence>
+                        <Continue/>
+                    </Fallback>
+                </WhileTrue>
+            </Sequence>
+            <!-- Continue standing in the group, represented as no action needed -->
+            <Continue/>
+        </Fallback>
+    </BehaviorTree>
+</root>

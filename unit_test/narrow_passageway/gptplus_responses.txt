@@ -1,0 +1,515 @@
+Responses:
+    Narrow Passageway:
+    run1:
+        Let's outline the trajectories for both the robot and the warehouse employee. Here is the plan for the scenario:
+        Robot Path:
+
+        The robot needs to transport a box through a narrow passageway. The narrow passageways in the warehouse are nodes 9, 10, and 11.
+        Let's assume the robot starts from Node 7, an intersection node close to the narrow passageways.
+        Employee Path:
+
+        The employee encounters the robot in the narrow passageway and signals the robot to 'WAIT'.
+        Let's assume the employee starts from Node 17, another intersection node close to the narrow passageways.
+        Step-by-Step Path:
+        Robot Path:
+        Starting Point: Node 7 (Intersection)
+        Path: 7 -> 9 (Narrow Passageway)
+        Reason: The robot needs to pass through a narrow passageway to transport the box.
+        Employee Path:
+        Starting Point: Node 17 (Intersection)
+        Path: 17 -> 11 (Narrow Passageway)
+        Reason: The employee moves towards the narrow passageway and encounters the robot.
+        Detailed Trajectories:
+        Robot's Trajectory:
+        Start at Node 7 (Intersection)
+        Move to Node 9 (Narrow Passageway)
+        Employee's Trajectory:
+        Start at Node 17 (Intersection)
+        Move to Node 11 (Narrow Passageway)
+        Encounter Point:
+        The robot and the employee encounter each other at the intersection of their paths in the narrow passageway.
+        Both paths include Node 10 as a possible meeting point since both narrow passageways intersect there.
+        Path Sequence:
+        Robot Path Sequence:
+
+        7 -> 15 -> 9 -> 10
+        Employee Path Sequence:
+
+        17 -> 16 -> 10
+        Both the robot and the employee meet at Node 10 (Narrow Passageway).
+
+        Explanation:
+        The paths chosen ensure that the robot navigates through the narrow passageway while transporting the box.
+        The employee moves from the intersection (Node 17) towards the narrow passageway, ensuring they encounter the robot at Node 10.
+        The paths are selected based on the connectivity of nodes provided in the scene graph.
+        Conclusion:
+        The robot and employee will encounter each other at Node 10, where the employee signals the robot to 'WAIT'.
+
+    run2:
+        To orchestrate the scenario where a robot transports a box through a narrow passageway and encounters a warehouse employee who signals it to 'WAIT', we can follow these steps:
+        Identifying the narrow passageways:
+        From the JSON data, the narrow passageways are:
+
+        Node 9
+        Node 10
+        Node 11
+        Selecting the trajectory:
+        Robot's trajectory through the narrow passageway:
+
+        The robot starts at Node 7 (an intersection).
+        Moves to Node 15 (an intersection).
+        Passes through Node 9 (a narrow passageway).
+        Moves to Node 10 (a narrow passageway).
+        Finally moves to Node 11 (a narrow passageway).
+        Human trajectory to intersect the robot and signal 'WAIT':
+
+        The human starts at Node 17 (an intersection).
+        Moves to Node 16 (an intersection).
+        Passes through Node 10 (a narrow passageway) and signals the robot to 'WAIT'.
+        Reasoning:
+        Robot's path: The robot starts at Node 7, a common starting point for various paths, and moves through intersections and narrow passageways to transport the box.
+        Human's path: The human starts at Node 17 and intersects the robot's path at Node 10 to signal 'WAIT'. This ensures the human meets the robot in a narrow passageway, creating a realistic scenario for waiting due to limited space.
+        Sequence of nodes:
+        Robot's Path: 7 → 15 → 9 → 10 → 11
+        Human's Path: 17 → 16 → 10
+        Describing the Scenario:
+        Robot's Trajectory:
+
+        The robot starts at Node 7 and navigates to Node 15.
+        From Node 15, it proceeds to Node 9 (a narrow passageway).
+        It continues through Node 10, another narrow passageway.
+        Finally, it moves to Node 11, another narrow passageway.
+        Human's Trajectory:
+
+        The human starts at Node 17 and moves to Node 16.
+        The human proceeds to Node 10, where they encounter the robot.
+        At Node 10, the human signals the robot to 'WAIT'.
+        The robot and the human meet at Node 10, where the human signals the robot to stop due to the narrow passageway.
+===============xxxxxxxxxxxxxxxxxx============
+    run3: 
+        To describe the robot's and the warehouse employee's trajectories in the warehouse scenario using the given scene graph, we need to select appropriate nodes for their paths. Let's break down the scenario:
+
+        Robot's Path:
+
+        The robot needs to navigate through a narrow passageway. Let's choose Node 9 and Node 10 as they are labeled as "NARROW PASSAGEWAY".
+        The robot will start from a starting node (let's say Node 8), pass through Node 9 and Node 10, and move towards another point (let's say Node 17).
+        Human's Path:
+
+        The warehouse employee encounters the robot at Node 10 and signals it to 'WAIT'.
+        The employee starts from a different point (let's choose Node 18) and moves to Node 10 to interact with the robot.
+        Trajectories:
+        Robot's Path: Starting from Node 8, passing through the narrow passageway (Node 9 and Node 10), and then to Node 17.
+        Human's Path: Starting from Node 18, moving to Node 10 to signal the robot.
+        Reasoning:
+        Nodes 9 and 10 are chosen for the narrow passageway as they are labeled as such.
+        Nodes are chosen based on their connectivity to ensure the paths are valid.
+        Here are the detailed paths:
+
+        Robot's Path:
+
+        Start at Node 8.
+        Move to Node 7 (since 8 is connected to 7).
+        Move to Node 15 (since 7 is connected to 15).
+        Move to Node 9 (since 15 is connected to 9).
+        Move to Node 10 (since 9 is connected to 10).
+        Move to Node 16 (since 10 is connected to 16).
+        Move to Node 17 (since 16 is connected to 17).
+        Human's Path:
+
+        Start at Node 18.
+        Move to Node 19 (since 18 is connected to 19).
+        Move to Node 25 (since 19 is connected to 25).
+        Move to Node 22 (since 25 is connected to 22).
+        Move to Node 17 (since 22 is connected to 17).
+        Move to Node 16 (since 17 is connected to 16).
+        Move to Node 10 (since 16 is connected to 10).
+        Summary:
+        Robot: 8 -> 7 -> 15 -> 9 -> 10 -> 16 -> 17
+        Human: 18 -> 19 -> 25 -> 22 -> 17 -> 16 -> 10
+        Explanation:
+        The robot starts at Node 8 and navigates through the narrow passageway, reaching Node 10 where it encounters the employee.
+        The employee starts at Node 18 and moves towards Node 10, signaling the robot to wait.
+        This sequence ensures both the robot and the human follow the correct paths as defined by the scene graph's connectivity.
+
+    run4:
+        To orchestrate the scenario where a robot navigates a narrow passageway in the warehouse and encounters a warehouse employee who signals the robot to 'WAIT', we will first identify an appropriate narrow passageway and create a trajectory for both the robot and the employee based on the scene graph provided.
+
+        Identifying the Narrow Passageway
+        From the scene graph, we know the narrow passageways are nodes 9, 10, and 11. We will use one of these for the scenario. Let's select node 10 as our narrow passageway.
+
+        Robot Trajectory
+        The robot will navigate through the narrow passageway at node 10. We will create a trajectory for the robot starting from a node before the passageway, through node 10, and then to a node after the passageway.
+
+        Robot Path:
+        Start at Node 15 (Intersection close to narrow passageway 10)
+        Move to Node 16 (Intersection connected to node 10)
+        Move to Node 10 (Narrow Passageway)
+        Employee Trajectory
+        The employee will encounter the robot at node 10 and signal it to 'WAIT'. We will create a trajectory for the employee that leads to node 10 and includes nodes where the employee might have been working or moving through.
+
+        Employee Path:
+        Start at Node 21 (Open area where employees might be working)
+        Move to Node 16 (Intersection connected to node 10)
+        Move to Node 10 (Narrow Passageway)
+        Complete Path Description
+        Robot Path: 15 -> 16 -> 10
+        Employee Path: 21 -> 16 -> 10
+        Reasoning
+        Node Selection: Nodes 10, 11, and 12 are identified as narrow passageways. Node 10 is chosen for this scenario.
+        Path Constraints: Each step in the path is validated to ensure an edge exists between consecutive nodes as per the scene graph JSON.
+        Here is the detailed reasoning for the selection of each path:
+
+        Robot's Path:
+
+        Node 15 to Node 16: Node 15 is an intersection connected to both node 9 and node 16, making it a suitable starting point close to the narrow passageway.
+        Node 16 to Node 10: Node 16 connects directly to the narrow passageway at node 10, which is necessary for the robot to pass through it.
+        Employee's Path:
+
+        Node 21 to Node 16: Node 21 is an open area where employees are likely to be present. Moving to node 16 is logical as it connects to various nodes, including the narrow passageway at node 10.
+        Node 16 to Node 10: From node 16, the employee can directly move to node 10 to encounter the robot in the narrow passageway.
+        This ensures that the robot and the employee follow paths connected by edges in the scene graph, accurately simulating the scenario in the warehouse environment.   
+===============xxxxxxxxxxxxxxxxxx============
+
+    run5:
+        To orchestrate the scenario where a robot needs to transport a box through a narrow passageway and encounters a warehouse employee who signals it to 'WAIT', we need to choose appropriate nodes that correspond to a narrow passageway and ensure both the robot and the employee can traverse these nodes according to the scene graph's connections.
+
+        Choosing Nodes for the Narrow Passageway
+        In the scene graph, the narrow passageway nodes are:
+
+        Node 9
+        Node 10
+        Node 11
+        We will assume the robot starts at Node 9, and it will traverse through Node 10 and Node 11, while encountering a warehouse employee at Node 10.
+
+        Robot's Trajectory
+        Robot starts at Node 9:
+
+        Initial position: (656, 152)
+        Type: Narrow Passageway
+        Robot moves to Node 10:
+
+        Position: (771, 158)
+        Type: Narrow Passageway
+        Robot encounters the employee at Node 10 and is signaled to 'WAIT'.
+
+        Robot waits at Node 10.
+
+        After waiting, the robot continues to Node 11:
+
+        Final position: (884, 142)
+        Type: Narrow Passageway
+        Warehouse Employee's Trajectory
+        Assume the employee starts from a nearby node and moves towards the narrow passageway to signal the robot.
+
+        Employee starts at Node 8:
+
+        Position: (506, 159)
+        Type: Passageway
+        Employee moves to Node 7:
+
+        Position: (500, 312)
+        Type: Intersection
+        Employee moves to Node 15:
+
+        Position: (662, 315)
+        Type: Intersection
+        Employee moves to Node 16:
+
+        Position: (779, 319)
+        Type: Intersection
+        Employee moves to Node 10:
+
+        Position: (771, 158)
+        Type: Narrow Passageway
+        Employee signals the robot to 'WAIT' at Node 10.
+
+        Path Summary
+        Robot's Path:
+        Start: Node 9 -> Node 10 (Wait) -> Node 11
+        Employee's Path:
+        Start: Node 8 -> Node 7 -> Node 15 -> Node 16 -> Node 10 (Signal 'WAIT')
+        Reasoning
+        The narrow passageway nodes (9, 10, 11) are chosen for the robot's path to align with the task requirement.
+        The employee's path is chosen to reflect a realistic movement from a nearby passageway node (Node 8) to the encounter point (Node 10) through connected intersections and passageways.
+        Visualization of the Paths
+        Robot Path: 9 -> 10 (Wait) -> 11
+        Employee Path: 8 -> 7 -> 15 -> 16 -> 10 (Signal 'WAIT')
+        This sequence ensures both the robot and the employee follow valid paths in the scene graph, adhering to the connectivity rules.
+
+    run6:
+        Let's break down the task into clear steps:
+
+        Identify a narrow passageway in the warehouse where the robot needs to transport a box.
+        Plan the robot's trajectory through this passageway.
+        Plan the warehouse employee's trajectory until they encounter the robot.
+        Describe the sequence of nodes for both trajectories.
+        Step 1: Identify a Narrow Passageway
+        From the provided scene graph JSON, the nodes identified as "NARROW PASSAGEWAY" are:
+
+        Node 9
+        Node 10
+        Node 11
+        Step 2: Plan the Robot's Trajectory
+        Let's choose Node 9 (a narrow passageway) for the robot to transport the box. The robot's trajectory can start from a nearby node and pass through Node 9.
+
+        For example, the robot can start at Node 8 (PASSAGEWAY) and then move to Node 9:
+
+        Starting at Node 8
+        Moving to Node 9
+        Step 3: Plan the Warehouse Employee's Trajectory
+        The warehouse employee can start from another nearby node and move towards Node 9, where they encounter the robot.
+
+        For example, the employee can start at Node 15 (INTERSECTION) and then move towards Node 9:
+
+        Starting at Node 15
+        Moving to Node 9
+        Step 4: Describe the Sequence of Nodes
+        Robot's Trajectory:
+        Node 8 (506, 159) [PASSAGEWAY]
+        Node 9 (656, 152) [NARROW PASSAGEWAY]
+        Employee's Trajectory:
+        Node 15 (662, 315) [INTERSECTION]
+        Node 9 (656, 152) [NARROW PASSAGEWAY]
+        Reasoning
+        The robot's path is feasible because there is an edge "8<->9" connecting the nodes.
+        The employee's path is feasible because there is an edge "15<->9" connecting the nodes.
+        Both trajectories lead to Node 9, where the encounter happens.
+        Thus, the robot and the warehouse employee will meet at Node 9. The employee signals the robot to "WAIT" at this node.
+
+        Final Path Descriptions:
+        Robot's Trajectory: 8 → 9
+        Employee's Trajectory: 15 → 9
+        The encounter happens at Node 9 (656, 152) [NARROW PASSAGEWAY].
+
+    run7:
+        To orchestrate the described scenario in the warehouse, let's break down the requirements and provide a detailed trajectory for both the robot and the warehouse employee.
+
+        Scenario:
+        Robot needs to transport a box through a narrow passageway.
+        The robot encounters a warehouse employee who signals the robot to 'WAIT'.
+        Narrow Passageway Identification:
+        Based on the scene graph, nodes with the type "NARROW PASSAGEWAY" are:
+
+        Node 9
+        Node 10
+        Node 11
+        We'll assume the robot is navigating through one of these narrow passageways.
+
+        Possible Paths:
+        We'll identify a suitable narrow passageway, and plan a trajectory for the robot and an encounter with the employee. Let's choose Node 10 for this example.
+
+        Trajectory for the Robot:
+        Starting Point: We'll choose a point that is reasonably connected to Node 10. Let's start at Node 15.
+        Path to Narrow Passageway: Move from Node 15 to Node 10.
+        Trajectory for the Warehouse Employee:
+        Starting Point: We'll assume the employee starts from a nearby node, say Node 16.
+        Encounter Point: The employee will move towards the narrow passageway and encounter the robot at Node 10 or 15.
+        Detailed Node Path:
+        Robot Path:
+
+        Start at Node 15 (Intersection).
+        Move to Node 10 (Narrow Passageway).
+        Employee Path:
+
+        Start at Node 16 (Intersection).
+        Move to Node 10 (Narrow Passageway) to encounter the robot.
+        Reasoning:
+        Node Connections: All nodes chosen (15, 10, and 16) are connected by edges, ensuring valid movement paths.
+        Narrow Passageway: Node 10 represents a narrow passageway, fulfilling the scenario requirement.
+        JSON Representation of the Paths:
+        json
+        Copy code
+        {
+            "robot_path": [15, 10],
+            "employee_path": [16, 10]
+        }
+        Path Descriptions:
+        Robot's Path:
+
+        The robot starts at Node 15, an intersection where multiple paths converge.
+        It then moves to Node 10, which is a narrow passageway, where it will encounter the employee.
+        Employee's Path:
+
+        The employee starts at Node 16, another intersection close to Node 10.
+        They move towards Node 10 to signal the robot to 'WAIT'.
+        Visualization:
+        Here's the visual representation based on the provided image:
+
+        The robot starts at Node 15 and moves to Node 10.
+        The employee starts at Node 16 and moves to Node 10.
+        Using this plan, the simulation can be set up in Gazebo or any similar simulator to visualize the paths and the encounter between the robot and the warehouse employee.
+
+
+    run8:
+        To orchestrate the scenario where a robot needs to transport a box through a narrow passageway in the warehouse and encounters a warehouse employee who signals the robot to 'WAIT', we need to follow these steps:
+
+        1. Identify the narrow passageway in the scene.
+        2. Determine the starting and ending points for the robot's path.
+        3. Choose a point within the narrow passageway where the robot encounters the employee.
+        4. Ensure the paths taken by both the robot and the employee are connected through valid nodes in the scene graph.
+
+        Let's analyze the scene graph and identify a suitable narrow passageway and corresponding paths.
+
+        ### Step 1: Identify Narrow Passageways
+        From the provided JSON data, the narrow passageways are nodes 9, 10, and 11.
+
+        ### Step 2: Determine Starting and Ending Points
+        For simplicity, we can choose the starting point of the robot at node 3 (Intersection) and the ending point at node 18 (Intersection). The robot will navigate through the narrow passageway at node 10.
+
+        ### Step 3: Choose Encounter Point
+        Let's choose node 10 as the encounter point where the robot will meet the warehouse employee.
+
+        ### Step 4: Path Planning
+
+        #### Robot's Path
+        The robot will start at node 3, move through intersections and narrow passageways, and end at node 18.
+        - Starting at node 3
+        - Moving to node 6
+        - Moving to node 7
+        - Moving to node 15
+        - Moving to node 10 (Narrow Passageway, Encounter Point)
+        - Waiting at node 10
+        - Continuing to node 16
+        - Ending at node 18
+
+        #### Employee's Path
+        The employee can approach from a nearby node and signal the robot to wait at node 10.
+        - Starting at node 25
+        - Moving to node 22
+        - Moving to node 21
+        - Moving to node 16
+        - Moving to node 10 (Narrow Passageway, Encounter Point)
+        - Signaling 'WAIT' at node 10
+
+        ### Sequence of Nodes
+
+        #### Robot's Trajectory
+        1. 3 -> 6 -> 7 -> 15 -> 10 (WAIT) -> 16 -> 18
+
+        #### Employee's Trajectory
+        1. 25 -> 22 -> 21 -> 16 -> 10 (SIGNAL 'WAIT')
+
+        ### Explanation
+        The robot starts from node 3 and navigates through connected nodes until it reaches node 10. At node 10, the robot encounters the employee who signals it to wait. The robot then continues its journey from node 10 to node 18 after the employee's signal. The paths for both the robot and the employee follow the connectivity rules of the scene graph.
+
+        By following the sequence of nodes described, the scenario adheres to the constraints of the scene graph, ensuring valid and connected paths for both the robot and the warehouse employee.
+    run9:
+    ===============xxxxxxxxxxxxxxxxxx============
+        To simulate the scenario where a robot needs to transport a box through a narrow passageway and encounters a warehouse employee who signals it to 'WAIT', we will outline the trajectories for both the robot and the employee. We'll ensure that their paths follow the connected nodes as described in the JSON file and as shown in the image. 
+
+        ### Scenario Setup
+        1. **Robot's Path**: The robot starts at a location outside the narrow passageways and needs to navigate through one of them (e.g., Nodes 9, 10, or 11).
+        2. **Employee's Path**: The employee starts at a different location and walks towards the narrow passageway to encounter the robot and signal it to 'WAIT'.
+
+        ### Selected Narrow Passageway
+        We'll choose Node 10 (Narrow Passageway) for the robot's path, and Node 9 as the employee's location for the encounter.
+
+        ### Trajectories
+        #### Robot's Path
+        1. **Starting Position**: Node 5 (PASSAGEWAY)
+        2. **Path**: 
+        - Move from Node 5 to Node 3 (INTERSECTION).
+        - Move from Node 3 to Node 6 (CHILD).
+        - Move from Node 6 to Node 7 (INTERSECTION).
+        - Move from Node 7 to Node 15 (INTERSECTION).
+        - Move from Node 15 to Node 16 (INTERSECTION).
+        - Move from Node 16 to Node 10 (NARROW PASSAGEWAY).
+
+        #### Employee's Path
+        1. **Starting Position**: Node 8 (PASSAGEWAY)
+        2. **Path**:
+        - Move from Node 8 to Node 7 (INTERSECTION).
+        - Move from Node 7 to Node 15 (INTERSECTION).
+        - Move from Node 15 to Node 9 (NARROW PASSAGEWAY).
+
+        ### Encounter Point
+        The encounter happens at Node 15, where the employee signals the robot to 'WAIT'.
+
+        ### Complete Sequence of Nodes
+        #### Robot's Trajectory
+        - **Path**: 5 -> 3 -> 6 -> 7 -> 15 -> 16 -> 10
+
+        #### Employee's Trajectory
+        - **Path**: 8 -> 7 -> 15 -> 9
+
+        ### Explanation
+        - The robot starts at Node 5 and moves through the passageways and intersections, ultimately reaching the narrow passageway at Node 10.
+        - The employee starts at Node 8 and moves through the intersections to reach Node 9, passing through the encounter point at Node 15.
+        - At Node 15, the employee signals the robot to 'WAIT' before continuing to Node 9.
+
+        ### Visual Representation
+        Referencing the image:
+        - The robot's path is depicted with a sequence of blue lines connecting nodes: 5 -> 3 -> 6 -> 7 -> 15 -> 16 -> 10.
+        - The employee's path is depicted with another set of blue lines connecting nodes: 8 -> 7 -> 15 -> 9.
+        - The encounter point is highlighted at Node 15.
+
+        This path planning ensures the robot and employee follow connected nodes as per the scene graph and meet at the designated encounter point for the scenario to unfold.
+
+    run10:
+    ===============xxxxxxxxxxxxxxxxxx============
+
+        Given the warehouse scene graph JSON and the corresponding image, we need to devise a plausible path for a robot transporting a box through a narrow passageway and encountering an employee who signals the robot to 'WAIT'. Here’s how we can proceed:
+
+        ### Steps to Determine Trajectories
+
+        1. **Identify the Narrow Passageways**: From the JSON data, we identify nodes of type "NARROW PASSAGEWAY" which are nodes 9, 10, and 11.
+        2. **Starting and Ending Points for Robot**: Choose a starting point for the robot and an endpoint that involves traversing through a narrow passageway.
+        3. **Employee Encounter**: Identify a point where the employee will encounter the robot and signal it to 'WAIT'.
+
+        ### Path Selection
+        1. **Starting Point**: Let's start the robot from node 3 (type: INTERSECTION).
+        2. **Through the Narrow Passageway**: The robot will pass through node 9 (NARROW PASSAGEWAY).
+        3. **Ending Point**: The robot will continue to node 12 (type: PASSAGEWAY).
+        4. **Employee Encounter**: The employee will start at node 15 (type: INTERSECTION) and encounter the robot at node 10 (NARROW PASSAGEWAY).
+
+        ### Trajectories
+
+        #### Robot Path:
+        1. **Starting Point**: Node 3
+        2. **Path**: Node 3 -> Node 6 -> Node 7 -> Node 15 -> Node 9 -> Node 10 -> Node 11 -> Node 12
+        3. **Reasoning**: This path ensures that the robot goes through nodes 9, 10, and 11, which are narrow passageways, before reaching node 12.
+
+        #### Employee Path:
+        1. **Starting Point**: Node 15
+        2. **Path**: Node 15 -> Node 10
+        3. **Reasoning**: The employee needs to encounter the robot within the narrow passageway. Thus, starting from node 15 and moving to node 10 achieves this.
+
+        ### JSON Representation of Trajectories
+
+        #### Robot Trajectory:
+        ```json
+        {
+        "robot_trajectory": [
+            {"id": 3, "pos": [190, 322]},
+            {"id": 6, "pos": [334, 326]},
+            {"id": 7, "pos": [500, 312]},
+            {"id": 15, "pos": [662, 315]},
+            {"id": 9, "pos": [656, 152]},
+            {"id": 10, "pos": [771, 158]},
+            {"id": 11, "pos": [884, 142]},
+            {"id": 12, "pos": [1006, 154]}
+        ]
+        }
+        ```
+
+        #### Employee Trajectory:
+        ```json
+        {
+        "employee_trajectory": [
+            {"id": 15, "pos": [662, 315]},
+            {"id": 10, "pos": [771, 158]}
+        ]
+        }
+        ```
+
+        ### Reasoning and Steps:
+
+        1. **Robot starts at Node 3**: The robot initiates at the intersection, ensuring it can access multiple pathways.
+        2. **Moves through Nodes 6 and 7**: This leads the robot towards the narrow passageway starting at node 9.
+        3. **Passes through Nodes 9, 10, and 11**: These nodes represent narrow passageways, crucial for the task.
+        4. **Reaches Node 12**: The robot completes its path after passing through the narrow passageways.
+
+        ### Encounter Scenario:
+        - The employee starts at Node 15 and moves to Node 10, where they will signal the robot to 'WAIT'.
+
+        This solution ensures the robot navigates through the narrow passageways and encounters the employee as per the requirements.

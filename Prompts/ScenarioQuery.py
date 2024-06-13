@@ -2,84 +2,120 @@ from .BasePrompt import BasePrompt
 class ScenarioQuery(BasePrompt):
     def __init__(self) -> None:
         super().__init__()
-        self.background = """ Social navigation involves a robot navigating to a goal in the presence of humans and adhering to the following principles:
-    Safety (P1): Ensure no harm comes to people or property by avoiding collisions and risky behaviors.
-    Comfort (P2): Maintain personal space and move in ways that do not startle or distress individuals.
-    Legibility (P3): Make the robot’ s actions predictable and understandable to those around it.
-    Politeness (P4): Navigate with courtesy, often signaling intent and yielding way as needed.
-    Social Competency (P5): Adhere to social norms and cultural expectations in shared environments. Adhering to Cultural norms is also very important and included within this.
-    Understanding Other Agents (P6): Recognize and appropriately respond to the behaviors and intentions of others.
-    Proactivity (P7): Anticipate and address potential social dilemmas or conflicts before they arise.
-    Task Efficiency (P8): Complete the given task in a timely manner without sacrificing other social principles.
-However, since its not possible to optimize all of these at the same time always, depending on the social situation and the task, the robot must favor some principles over the other. For example, when the robot is trying to deliver an emergency cart to a patient, P2 and P5 take less precedence over P1 and P8. Similarly, in a library, when a robot is delivering a book, P5, P2 and P1 are more important to optimize than P8.
-Social Navigation is a complex skill for a robot to accomplish and the appropriateness of the behavior of a robot is highly dependent on the task and the social context. Thus a robot’s social navigation capabilities must be thoroughly tested, and this is done by evaluating the robot’s behavior in a number of scenarios in a variety of contexts.
-    """
-        self.main_system = """You are a scenario designer. Your task is to generate scenarios to test the social navigation capabilities of a robot.
-User will provide a [Social context], a [Task] and the associated [Scene Graph] of the location. 
-You must provide an appropriate [Scenario] to test the performance of the robot's navigation algorithm, along with the corresponding [Expected behavior] of the robot based on a [Ranking] of the priorities of the Principles for the [Scenario]. You must also explain the [Reasoning] behind why its important to test the robot in this [Scenario] given the User input.
-Use scene graph nodes when refering to locations. A Scene graph node is defined in the following format: id (name (optional)). For example, 1 (Bedroom), 2, 5 (Bathroom) etc.
-Assume that the robot being tested is a simple navigation bot. It can also say the following phrases ONLY: [”WAIT”, “PROCEED”, “MAKE WAY”, “I AM HERE”].
+        self.required_output_keys = ['scenariodescription','numberofhumans','humanbehavior','expectedrobotbehavior']
+        self.payload = [
+            {
+                "role":"system",
+                "content":[{
+                    "type":"text",
+                    "text":"Provide outputs strictly in JSON format"
+                    }]
+            },
+            {"role":"user","content":[{"type":"text","text":"""
+                                      
+Social Navigation is a complex skill for a robot to accomplish and the appropriateness of the behavior of a robot is highly dependent on the task and the social context. 
+Thus a robot’s social navigation capabilities must be thoroughly tested, and this is done by evaluating the robot’s behavior in a number of scenarios in a variety of contexts.
+You are a scenario designer. Your task is to generate scenarios to test the social navigation capabilities of a robot.
+A Social Navigation [Scenario] is defined by:
+    1. Scenario Description: very detailed description of the scenario. WHAT happens in the scenario and WHERE the scenario takes place. WHERE the robot and humans are located.
+    2. Human Behavior:  how human interacts with the robot when it is visible, for e.g. Human 1 is scared of the robot and asks it to stop, Human 2 doesn't notice the robot at all etc.
+Your output description will be later used by an expert Behaviour tree designer to generate a Behavior Tree for each human in the scene. 
 
-Human agents in the scenario are overly simplified humans capable of doing the following ONLY:
-    1. Navigating from one point to another
-    2. Navigating from one point to another through specific waypoints
-    3. Saying the following to the robot ["WAIT","PROCEED","COME HERE","GO AWAY"]
-    4. Gathering in groups of sizes ranging from 2-5. This includes Forming a group, joining a group, exiting a group. 
-    5. Intereacting with the robot, for example, approaching the robot, following the robot, blocking the robot, looking at the robot, walking along with the robot, leading the robot.
-    """
-        self.output_format = """
-YOU ADHERE TO THE FOLLOWING OUTPUT FORMAT STRICTLY. This is very important since your ouput will be used by a program later on. Do not provide any additional explanation. 
-    {
-        'Scenario Description': < Subjective description of the scenario >,
-         'Number of Humans': <Number of humans that are involved in the scenario>,
-         'Trajectories':{
-        'Robot': <comma separated sequence of Scene Graph nodes>,
-        'Human 1': ....
-        'Human 2': ...
-                        },
-    {'Behaviors':{
-        'Human 1': <Description of behavior of Human 1 w.r.t the robot>,
-        'Human 2':...,
-    },
+The behavior tree designer is not allowed to modify the scenario and can only create behavior that can be generated using the following Actions and Conditions:
+ - Conditions
+        - Check the visibility of the robot
+        - Check if the human has reached their goal
+        - Check if robot is saying any particular phrase
+        - Check if the robot is currently moving
+        - Check if the robot is blocking the human's path
+    
+    - Actions:
+        - Make the human perform a gesture.
+        - Make the human perform normal navigation to reach its goal and treat the robot as a normal obstalce. This is regular behavior for humans.
+        - Make the human look in the direction of the robot
+        - Make the human follow the robot
+        - Make the human scared of the robot and avoid it.
+        - Make the human give way to the robot
+        - Make the human move quickly towards the front of the robot and block the robot.
         
-    'Expected Robot Behavior': <Describe the behavior expected from the robot>,
-    'Principle Ranking': The order of importance for the 8 principles for this scenario,
-    'Reasoning': <4-5 line description of why this scenario is relevant for the given input for testing>
-    }
-    """
-        self.examples = """### Example:
-User:
-[Social context]: Robot is a home assistant in a Singaporean old-age home and performs daily helpful duties for the residents
-[Task]: Deliver coffee
-[Scene Graph]:
-{'nodes': [{'type': 'room', 'id': '1 (Bedroom)'}, {'type': 'room', 'id': '2 (Living Room)'}, {'type': 'room', 'id': '3 (Kitchen)'}, {'type': 'connector', 'id': '4 (Doorway)'}], 'links': ['1 (Bedroom)<->2 (Living Room)', '2 (Living Room)<->4 (Doorway)', '3 (Kitchen)<->4 (Doorway)']}
+        NOTE: AT ANY GIVEN POINT OF TIME, THE HUMAN CAN ONlY PEFORM ANY ONE OF THE ABOVE ACTIONS.
 
-Assistant:
-    {'Scenario Description': "The robot is trying to deliver coffee from the 3 (Kitchen) to the 2 (Living Room) and encounters one of the elderly residents entering the 3 (Kitchen) from the 2 (Living Room) through the 4 (Doorway).",
-    'Number of Humans': 1,
-    'Trajectories':{
-        'Robot': ["3 (Kitchen)","4 (Doorway)", "2 (Living Room)"],
-        'Human 1': ["Living Room(2)","Doorway(4)","3 (Kitchen)"]
-                    },
-    'Behaviors':{
-        'Human 1': "Human has bad eyesight and cannot see the robot unless its very close. When the human sees the robot, they stop until the robot says something (for a maximum of 5 seconds) and then continue their activity."
-        },
-    'Expected Robot Behavior': "The robot says "I AM HERE" to the resident. It waits for the resident to be well clear of the Doorway(4) before saying "MOVING" and going through the Doorway(4) to the 2 (Living Room) in a slow pace.",
-    'Principle Ranking': "Safety (P1)>Social Competency (P5)>Understanding Other Agents (P6)>Legibility(P3)>Comfort(P2)>Politeness(P4)>Proactivity(P7)>Task Efficiency (P8)",
-    'Reasoning': "It is important to evaluate the behavior of the robot when being confronted in close spaces by different types of humans. In an elderly home, there are likely elderly residents doing daily tasks who could be scared of the robot."
-    }
-###
-    """
+The humans are only capable of performing the actions mentioned above.
+User will provide a [Social context], a [Task] that the robot needs to do, a description of the location and optionally a [Rough Scenario]. 
+Your generated scenario will be programmatically simulated through a pipeline into a scenario in the Gazebo physics simulator.
+Rules:
+- The humans can say "WAIT", "PROCEED", "EXCUSE ME" to the robot  to aid in navigation. The robot can say "WAIT", "PROCEED", "EXCUSE ME", "ACKNOWLEDGED" to the humans to aid in navigation. 
+- When the user provides a Rough Scenario, ensure your final scenario is strictly aligned to the rough scenario
+- The humans in the simulator are SIMPLIFIED OBJECTS that only can move in 2D, send and receive simple phrases, detect the robot, look at the robot, group together with other humans, navigate to a predefined goal and change their trajectory conditioned on the robot’s position and velocity.
+- When using groups in the scenario, add all group members to the humans in the scenario. Having only 1 human with 'INTERACTING WITH GROUP' task is incorrect.
+
+Design a scenario relevant to the following specifications:
+
+[Social context]: Robot is a home assistant in a Singaporean old-age home and performs daily helpful duties for the residents
+[Robot Task]: Deliver coffee
+[Rough Scenario]: None
+[Location]:   The home has a Kitchen, a Bedroom and a Living Room. A doorway connects the Kitchen to the Living Room and a Passageway connects the Living Room and the Doorway.
+
+YOU ADHERE TO THE FOLLOWING JSON FORMAT STRICTLY. 
+{
+'Scenario Description': <very detailed description of the scenario >,
+'Number of Humans': <Number of humans that are involved in the scenario>,
+‘Human behavior': {
+‘Human 1’: <Describe the behavior of Human 1>,
+‘Human 2’: <Describe the behavior of Human 2>,
+},
+'Expected Robot Behavior': <Describe the behavior expected from the robot>
+}
+"""}]},             
+{
+    "role":"assistant",
+   "content":[{
+        "type":"text",
+        "text":"""
+            {'Scenario Description': "The robot is trying to deliver coffee from the Kitchen to the Living Room and encounters one of the elderly residents entering the Kitchen from the Living Room through the  Doorway.",
+            'Number of Humans': 1,
+            'Human Behavior':{
+            'Human 1': Human 1 is going from going to kitchen from the living room. If the robot is very close-by, Human asks the robot to stop and waits (for a maximum of 5s) for the robot to stop, then continues navigating. Ignores the robot if it asks the human to wait.
+            },
+            'Expected Robot Behavior': "The robot says "I AM HERE" to the resident. It waits for the resident to be well clear of the Doorway before going through the Doorway to the Living Room in a slow pace."
+            }
+            """
+            }]  
+        }
+]
+        
     def get_full_prompt(self,**kwargs):
-        return dict(
-            user=[{'type':'text',
-                   'content':self.background + "\n" + self.main_system + "\n" + self.output_format + "\n" + self.examples + "\n" + f"""
-USER:
+        self.payload.append(
+            {
+            "role":"user",
+            "content":[{
+                "type":"text",
+                "text":
+                    f"""
+Design a scenario relevant to the following specifications:
+
 [Social Context]:{kwargs['context']}
 [Task]:{kwargs['task']}
-[SCENE GRAPH]:{kwargs['graph']}
-Assistant:
+[Location]:{kwargs['location']}
+[Rough Scenario]:{kwargs['rough_scenario']}
+
+YOU ADHERE TO THE FOLLOWING JSON FORMAT STRICTLY."""+""" 
+{
+'Scenario Description': <very detailed description of the scenario >,
+'Number of Humans': <Number of humans that are involved in the scenario>,
+‘Human behavior': {
+‘Human 1’: <Describe the behavior of Human 1>,
+‘Human 2’: <Describe the behavior of Human 2>,
+},
+'Expected Robot Behavior': <Describe the behavior expected from the robot>
+}
+
 """
-            },
-            ],
-            system = self.system_prompt)
+                }]
+            }
+        )
+        
+        return self.payload
+        
+        
+        

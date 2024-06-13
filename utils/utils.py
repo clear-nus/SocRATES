@@ -10,7 +10,13 @@ from io import BytesIO
 from collections.abc import Mapping
 import networkx as nx
 from PIL import Image as PILImage
-import os
+import random
+from termcolor import colored
+import pprint
+
+def pix2world(px):
+    return [-1.0*((px[1]/3.0034965034965) * 0.050000 + -7.000) ,-1*((px[0]/2.6604554865424) * 0.050000 + -10.500000)]
+
 def filter_scene_graph(scene_graph, node_type_to_remove):
     #for simple serialized dict graphs
     G = {'nodes':[],'links':[]}
@@ -75,13 +81,31 @@ def calculate_image_token_cost(dims, detail="auto"):
         # Invalid detail_option
         raise ValueError("Invalid value for detail parameter. Use 'low' or 'high'.")
 
+def pretty_print_conversation(messages):
+    role_to_color = {
+        "system": "red",
+        "user": "green",
+        "assistant": "blue",
+        "function": "magenta",
+    }
+    
+    for message in messages:
+        if message["role"] == "system":
+            print(colored(f"system: {message['content']}\n", role_to_color[message["role"]]))
+        elif message["role"] == "user":
+            print(colored(f"user: {message['content']}\n", role_to_color[message["role"]]))
+        elif message["role"] == "assistant" and message.get("function_call"):
+            print(colored(f"assistant: {message['function_call']}\n", role_to_color[message["role"]]))
+        elif message["role"] == "assistant" and not message.get("function_call"):
+            print(colored(f"assistant: {message['content']}\n", role_to_color[message["role"]]))
+        elif message["role"] == "function":
+            print(colored(f"function ({message['name']}): {message['content']}\n", role_to_color[message["role"]]))
 
 def get_image_bytes_from_url(image_url: str) -> bytes:
     im = Image.open(image_url)
     buf = io.BytesIO()
     im.save(buf, format="JPEG")
     return buf.getvalue()
-
 
 def load_image_from_url(image_url: str) -> Image:
     image_bytes = get_image_bytes_from_url(image_url)
@@ -132,10 +156,6 @@ def get_image_dims(image):
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
-    
-### BT Related
-
-### Function to add a custom node to Hunavsim
 
 def createHuman(agents_file,bt_file,params):
     #Edit Agents.yaml
@@ -173,3 +193,123 @@ def createHuman(agents_file,bt_file,params):
     #Edit BT file
     with open(bt_file,'w') as f:
         f.write(params['bt'])
+
+
+class SceneGraph:
+    def __init__(self, serialized_graph):
+        '''
+        Nodes have attributes:
+            - type
+            - ID (name)
+            - position (pixel)
+        '''
+        self.graph = nx.node_link_graph(serialized_graph) #nx graph
+        nx.set_edge_attributes(self.graph, {e: self.dist(e[0],e[1]) for e in self.graph.edges()}, "cost")            
+
+    def get_parent_nodes(self):
+        '''
+        This function returns the parent nodes in the graph
+        '''
+        return [n for n in self.graph.nodes if self.graph.nodes[n]['type']!='child']
+
+    def dist(self,n1,n2):
+        (x1,y1) = self.graph.nodes[n1]['pos']
+        (x2,y2) = self.graph.nodes[n2]['pos']
+        return ((x1-x2)**2+(y1-y2)**2)**0.5        
+
+    def sampleNodeOfType(self,node_type):
+        '''
+        This function samples nodes in the graph that are of the input type
+        '''
+        nodes = [n for n in self.graph.nodes if self.graph.nodes[n]['type']==node_type]
+        if len(nodes)==0:
+            return f"No node of type {node_type} exists in the graph"
+        return random.choice(nodes)
+        
+    def relativeDirection(self,node1,node2):
+        '''
+        This function returns the relative direction between two nodes.
+        for example, 'right,below' means that node1 is to the right and below node2
+        '''
+        try:
+            (x1,y1) = self.graph.nodes[node1]['pos']
+            (x2,y2) = self.graph.nodes[node2]['pos']
+        except KeyError:
+            return "These nodes don't exist in the graph"
+        direction = [None,None]
+        if x1>=x2:
+            direction[0] = 'right'
+        elif x1<=x2:
+            direction[0] = 'left'
+        elif y1>=y2:
+            direction[1] = 'below'
+        elif y1<=y2:
+            direction[1] = 'above'
+        else:
+            return 'None'
+        return direction
+    
+    def connectedNodes(self,node):
+        '''
+        This function returns all the neighbours of the input node and their types and distance from the node
+        '''
+        cnodes = 'None'
+        try:
+            neighbours =  list(self.graph.neighbors(node))
+            cnodes = {}
+            for c in neighbours:
+                cnodes[self.graph.nodes[c]] = self.graph.edges[(node,c)]['cost']
+        except nx.NetworkXError:
+            return "No such node exists in the graph"
+        return cnodes
+    
+    
+    def planPath(self,node1,node2):
+        '''
+        This function finds the shortest path between node1 and node2
+        '''
+        # returns -1 if no path exists
+        cost = 0
+        try:
+            path =  nx.astar_path(self.graph,node1,node2, weight = "cost")
+            n1 = path[0]
+            if len(path) > 1:
+                for n in path[1:]:
+                    cost += self.graph.edges[n1,n]["cost"]
+                    n1 = n
+        except nx.NetworkXNoPath:
+            cost = -1
+        return cost
+    
+    def isvalidtrajectory(self,trajectory):
+        #checks if a given node sequence is valid or not and returns the errors
+        #input: trajectory: sequence of node names in the graph
+        errors = []
+        traj_valid = True
+        for first,second in zip(trajectory,trajectory[1:]):
+            if (first,second) not in self.graph.edges:
+                errors.append((first,second))
+                traj_valid = False
+        return traj_valid, errors
+        
+    
+def gpt_function_call(graph,message):
+    for msg in message:
+        fn_name = msg.message.function_call.name()
+        fn_arguments = json.loads(msg.message.function_call.arguments)
+        try:
+            if fn_name == 'closestNodeOfType':
+                graph.closestNodeOfType()    
+            elif fn_name == "connectedNodes":
+                graph.connectedNodes()
+            elif fn_name == "closestNodes":
+                graph.closestNodes()
+            elif fn_name == "pathLength":
+                graph.pathLength()
+            else:
+                raise Exception("Function not found")
+            
+        except Exception as e:
+            print(f"Function Execution Failed")
+            print(e)
+            

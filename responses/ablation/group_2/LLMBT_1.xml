@@ -1,0 +1,13 @@
+<root main_tree_to_execute='ExcuseMeTree'>
+    <BehaviorTree ID='ExcuseMeTree'>
+        <Fallback name='ExcuseMeFallback'>
+            <Sequence name='AvoidRobotSequence'>
+                <RobotSays agent_id='{id}' message='3' />
+                <AvoidRobot agent_id='{id}' time_step='{dt}' />
+            </Sequence>
+            <Sequence name='StandInGroup'>
+                <MakeGesture agent_id='{id}' message='0' />
+            </Sequence>
+        </Fallback>
+    </BehaviorTree>
+</root>

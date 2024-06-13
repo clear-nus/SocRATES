@@ -1,0 +1,15 @@
+<root main_tree_to_execute="StopAndWaitTree"> 
+<include path="BTRegularNav.xml"/>
+    <BehaviorTree ID="StopAndWaitTree">
+    <Fallback name="StopAndWaitFallback">
+        <Sequence name="StopSequence">
+            <IsRobotBlocking agent_id="{id}" distance="0.5"/>
+        </Sequence>
+        <Sequence name="RegNav">
+            <SetBlackboard output_key="agentid" value="{id}"/>
+            <SetBlackboard output_key="timestep" value="{dt}"/>
+            <SubTree ID="RegularNavTree" id="agentid" dt="timestep"/>
+        </Sequence>
+    </Fallback>
+    </BehaviorTree>
+</root>

@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root main_tree_to_execute='Human1BehaviorTree'>
+    <include path='BTRegularNav.xml'/>
+    <BehaviorTree ID='Human1BehaviorTree'>
+        <Fallback name='BlockingFallback'>
+            <Sequence name='BlockingSequence'>
+                <IsRobotBlocking agent_id='{id}' distance='0.5'/>
+            </Sequence>
+            <Sequence name='RegNav'>
+                <SetBlackboard output_key='agentid' value='{id}' />
+                <SetBlackboard output_key='timestep' value='{dt}' />
+                <SubTree ID='RegularNavTree' id='agentid' dt='timestep' />
+            </Sequence>
+        </Fallback>
+    </BehaviorTree>
+</root>

@@ -1,0 +1,15 @@
+<root main_tree_to_execute='Human1IntersectionTree'>
+    <BehaviorTree ID='Human1IntersectionTree'>
+        <Fallback name='ExcuseFallback'>
+            <Sequence name='ExcuseMeSequence'>
+                <RobotSays agent_id='{id}' message='4' />
+                <LookAtRobot agent_id='{id}' />
+                <Sequence name='AvoidRobotSequence'>
+                    <IsRobotNearby agent_id='{id}' distance='2.0' />
+                    <AvoidRobot agent_id='{id}' time_step='{dt}' />
+                </Sequence>
+            </Sequence>
+            <!-- This part of the fallback tree is empty because doing nothing is the default action, which represents Human 1 standing in the group -->
+        </Fallback>
+    </BehaviorTree>
+</root>

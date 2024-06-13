@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root main_tree_to_execute='AvoidOrTalkTree'>
+    <include path='BTRegularNav.xml'/>
+    <BehaviorTree ID='AvoidOrTalkTree'>
+        <Fallback name='AvoidOrTalkFallback'>
+            <Sequence name='AvoidRobotSequence'>
+                <RobotSays agent_id='{id}' message='4'/>
+                <IsRobotNearby agent_id='{id}' distance='2.0'/>
+                <AvoidRobot agent_id='{id}' time_step='{dt}'/>
+            </Sequence>
+            <Sequence name='StandAndTalkSequence'>
+                <MakeGesture agent_id='{id}' message='0' />
+            </Sequence>
+        </Fallback>
+    </BehaviorTree>
+</root>

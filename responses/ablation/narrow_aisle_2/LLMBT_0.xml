@@ -1,0 +1,18 @@
+<root main_tree_to_execute="HumanWaitsForRobotTree">
+    <include path="BTRegularNav.xml"/>
+    <BehaviorTree ID="HumanWaitsForRobotTree">
+        <Fallback name="WaitOrNavigateFallback">
+            <Sequence name="WaitForRobotToMoveSequence">
+                <IsRobotBlocking agent_id="{id}" distance="2.0"/>
+                <Inverter>
+                    <RobotMoved agent_id="{id}"/>
+                </Inverter>
+            </Sequence>
+            <Sequence name="NavigateSeq">
+                <SetBlackboard output_key="agentid" value="{id}" />
+                <SetBlackboard output_key="timestep" value="{dt}" />
+                <SubTree ID="RegularNavTree" id="agentid" dt="timestep" />
+            </Sequence>
+        </Fallback>
+    </BehaviorTree>
+</root>

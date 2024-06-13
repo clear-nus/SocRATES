@@ -1,0 +1,14 @@
+<root main_tree_to_execute="Human1GroupTree">
+    <BehaviorTree ID="Human1GroupTree">
+        <Fallback name="RobotInteractionFallback">
+            <Sequence name="GiveWaySequence">
+                <RobotSays agent_id="{id}" message="4"/>
+                <GiveWaytoRobot agent_id="{id}" time_step="{dt}"/>
+                <Inverter>
+                    <IsRobotNearby agent_id="{id}" distance="2.0"/>
+                </Inverter>
+            </Sequence>
+            <!-- Add any action or condition here if the human continues to stand in the group, if needed -->
+        </Fallback>
+    </BehaviorTree>
+</root>

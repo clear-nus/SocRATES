@@ -1,0 +1,15 @@
+<root main_tree_to_execute="HumanGroupBehaviorTree">
+    <BehaviorTree ID="HumanGroupBehaviorTree">
+        <Fallback name="ExcuseMeFallback">
+            <Sequence name="ExcuseMeSequence">
+                <RobotSays agent_id="{id}" message="4" />
+                <LookAtRobot agent_id="{id}" />
+                <AvoidRobot agent_id="{id}" time_step="{dt}" />
+                <Inverter>
+                    <IsRobotNearby agent_id="{id}" distance="1.0" />
+                </Inverter>
+            </Sequence>
+            <Action name="StandInGroup"/>
+        </Fallback>
+    </BehaviorTree>
+</root>

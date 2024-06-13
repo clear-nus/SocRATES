@@ -1,0 +1,14 @@
+<root main_tree_to_execute='HumanGiveWayTree'>
+	<BehaviorTree ID='HumanGiveWayTree'>
+		<Fallback name='GiveWayFallback'>
+			<Sequence name='CheckAndGiveWay'>
+				<RobotSays agent_id='{id}' message='4'/>
+				<IsRobotNearby agent_id='{id}' distance='1.0'/>
+				<GiveWaytoRobot agent_id='{id}' time_step='{dt}'/>
+			</Sequence>
+			<Sequence name='ContinueStandingGroup'>
+				<MakeGesture agent_id='{id}' message='0'/>
+			</Sequence>
+		</Fallback>
+	</BehaviorTree>
+</root>

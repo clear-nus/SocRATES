@@ -1,0 +1,20 @@
+<root main_tree_to_execute='WaitForPathClearTree'>
+    <include path='BTRegularNav.xml'/>
+    <BehaviorTree ID='WaitForPathClearTree'>
+        <Fallback name='WaitOrMoveFallback'>
+            <Sequence name='WaitForClearPath'>
+                <IsRobotBlocking agent_id='{id}' distance='4.0'/>
+                <SetBlackboard output_key='agentid' value='{id}' />
+                <SetBlackboard output_key='timestep' value='{dt}' />
+            </Sequence>
+            <Sequence name='MoveTowardsGoal'>
+                <Inverter>
+                    <IsRobotVisible agent_id='{id}' distance='4.0'/>
+                </Inverter>
+                <SetBlackboard output_key='agentid' value='{id}' />
+                <SetBlackboard output_key='timestep' value='{dt}' />
+                <SubTree ID='RegularNavTree' id='agentid' dt='timestep' /> <!-- Using Subtree -->
+            </Sequence>
+        </Fallback>
+    </BehaviorTree>
+</root>

@@ -1,0 +1,31 @@
+hunav_loader:
+  ros__parameters:
+    agent0:
+      behavior: 7
+      cyclic_goals: false
+      g1:
+        h: 1.25
+        x: -3.9871944121071152
+        y: 8.996498054474683
+      g2:
+        h: 1.25
+        x: -6.0181606519208515
+        y: 9.146848249027215
+      goal_radius: 0.3
+      goals:
+      - g1
+      - g2
+      group_id: -1
+      id: 0
+      init_pose:
+        h: 0.0
+        x: -3.8706635622817345
+        y: 3.114046692606884
+        z: 1.25
+      max_vel: 1.5
+      radius: 0.4
+      skin: 0
+    agents:
+    - agent0
+    map: Warehouse_fixed
+    publish_people: true

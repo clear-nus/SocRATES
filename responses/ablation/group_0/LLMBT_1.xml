@@ -1,0 +1,14 @@
+<root main_tree_to_execute='Human2AtIntersectionTree'>
+    <BehaviorTree ID='Human2AtIntersectionTree'>
+        <Fallback name='ExcuseMeFallback'>
+            <Sequence name='ExcuseMeSequence'>
+                <RobotSays agent_id='{id}' message='4'/>
+                <Inverter>
+                    <IsRobotNearby agent_id='{id}' distance='2.0'/>
+                </Inverter>
+                <AvoidRobot agent_id='{id}' time_step='{dt}'/>
+            </Sequence>
+            <MakeGesture agent_id='{id}' message='0'/>
+        </Fallback>
+    </BehaviorTree>
+</root>
