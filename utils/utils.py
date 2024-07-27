@@ -1,4 +1,3 @@
-
 import base64
 import json
 import tiktoken
@@ -13,6 +12,31 @@ from PIL import Image as PILImage
 import random
 from termcolor import colored
 import pprint
+import xml.etree.ElementTree as ET
+
+def validate_bt(tree,node_library):
+    for elem in tree.iter():
+        if elem.tag not in node_library:
+            print(f'{elem.tag} not in node_library')
+            return False
+        
+        if elem.tag == 'SubTree':
+            continue
+         
+        #check for incorrect nodes
+        for k,v in elem.attrib.items():
+            if k not in node_library[elem.tag]:
+                print(f'{k} not in node_library[{elem.tag}]')
+                return False
+            
+        #check if all attributes are correct
+        if len(node_library[elem.tag])!=len(elem.attrib.keys()):
+            return False
+        for v in node_library[elem.tag]:
+            if v not in list(elem.attrib.keys()):
+                return False
+    return True
+
 
 def pix2world(px):
     return [-1.0*((px[1]/3.0034965034965) * 0.050000 + -7.000) ,-1*((px[0]/2.6604554865424) * 0.050000 + -10.500000)]
@@ -109,7 +133,8 @@ def get_image_bytes_from_url(image_url: str) -> bytes:
 
 def load_image_from_url(image_url: str) -> Image:
     image_bytes = get_image_bytes_from_url(image_url)
-    return Image.from_bytes(image_bytes)
+    return Image.from_bytes(image_bytes)    
+    
 
 def num_tokens_from_messages(message: Mapping[str, object], model: str) -> int:
     """
@@ -280,6 +305,15 @@ class SceneGraph:
         except nx.NetworkXNoPath:
             cost = -1
         return cost
+
+    def areTrajectoriesIntersecting(self,traj1,traj2):
+        #checks if two trajectories have at least 1 node in common
+        #input: traj1 and traj2 are sequences of node names in the graph
+        for n1 in traj1:
+            for n2 in traj2:
+                if n1 == n2:
+                    return True
+        return False
     
     def isvalidtrajectory(self,trajectory):
         #checks if a given node sequence is valid or not and returns the errors
@@ -291,25 +325,3 @@ class SceneGraph:
                 errors.append((first,second))
                 traj_valid = False
         return traj_valid, errors
-        
-    
-def gpt_function_call(graph,message):
-    for msg in message:
-        fn_name = msg.message.function_call.name()
-        fn_arguments = json.loads(msg.message.function_call.arguments)
-        try:
-            if fn_name == 'closestNodeOfType':
-                graph.closestNodeOfType()    
-            elif fn_name == "connectedNodes":
-                graph.connectedNodes()
-            elif fn_name == "closestNodes":
-                graph.closestNodes()
-            elif fn_name == "pathLength":
-                graph.pathLength()
-            else:
-                raise Exception("Function not found")
-            
-        except Exception as e:
-            print(f"Function Execution Failed")
-            print(e)
-            

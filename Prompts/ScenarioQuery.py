@@ -2,7 +2,13 @@ from .BasePrompt import BasePrompt
 class ScenarioQuery(BasePrompt):
     def __init__(self) -> None:
         super().__init__()
-        self.required_output_keys = ['scenariodescription','numberofhumans','humanbehavior','expectedrobotbehavior']
+        self.schema = {
+            'scenariodescription':None,
+            'numberofhumans':None,
+            'humanbehavior':{},
+            'expectedrobotbehavior':None,
+            'reasoning':None
+            }
         self.payload = [
             {
                 "role":"system",
@@ -14,40 +20,37 @@ class ScenarioQuery(BasePrompt):
             {"role":"user","content":[{"type":"text","text":"""
                                       
 Social Navigation is a complex skill for a robot to accomplish and the appropriateness of the behavior of a robot is highly dependent on the task and the social context. 
-Thus a robot’s social navigation capabilities must be thoroughly tested, and this is done by evaluating the robot’s behavior in a number of scenarios in a variety of contexts.
-You are a scenario designer. Your task is to generate scenarios to test the social navigation capabilities of a robot.
-A Social Navigation [Scenario] is defined by:
-    1. Scenario Description: very detailed description of the scenario. WHAT happens in the scenario and WHERE the scenario takes place. WHERE the robot and humans are located.
-    2. Human Behavior:  how human interacts with the robot when it is visible, for e.g. Human 1 is scared of the robot and asks it to stop, Human 2 doesn't notice the robot at all etc.
+Thus a robot’s social navigation capabilities must be thoroughly tested, and this is done by evaluating the robot’s behavior in a number of scenarios that are appropriate for a given social context and task.
+A Social Navigation Scenario is defined by:
+    1. Scenario Description: Very detailed description of the scenario. WHAT happens in the scenario and WHERE the scenario takes place. WHERE the robot and humans are located. For example, "Both Human 1 and Human 2 encounter the robot at an intersection".  
+    2. Human Behavior:  How each human in the scenario interacts with the robot when it is visible, for e.g. "Human 1 is scared of the robot and asks it to stop", "Human 2 doesn't notice the robot at all and keeps walking" etc.
+
+The user will provide a [Social context], a [Task] that the robot needs to do, a description of the [Location] and optionally a [Rough Scenario]. 
+You are a scenario designer. Your task is to generate scenarios to test the social navigation capabilities of a robot, that align with the rough scenario, task and social context, and is an important scenario to test the social navigation capabilities of the robot.
+Your generated scenario will be programmatically converted into a scenario in the Gazebo physics simulator.
+Using your output scenario description, first, the humans and the robot in the scene will be given waypoints for motion planning, then, the behavior of the human agents will be coded with a behavior tree.
 Your output description will be later used by an expert Behaviour tree designer to generate a Behavior Tree for each human in the scene. 
 
-The behavior tree designer is not allowed to modify the scenario and can only create behavior that can be generated using the following Actions and Conditions:
- - Conditions
-        - Check the visibility of the robot
-        - Check if the human has reached their goal
-        - Check if robot is saying any particular phrase
-        - Check if the robot is currently moving
-        - Check if the robot is blocking the human's path
-    
-    - Actions:
-        - Make the human perform a gesture.
-        - Make the human perform normal navigation to reach its goal and treat the robot as a normal obstalce. This is regular behavior for humans.
-        - Make the human look in the direction of the robot
-        - Make the human follow the robot
-        - Make the human scared of the robot and avoid it.
-        - Make the human give way to the robot
-        - Make the human move quickly towards the front of the robot and block the robot.
-        
-        NOTE: AT ANY GIVEN POINT OF TIME, THE HUMAN CAN ONlY PEFORM ANY ONE OF THE ABOVE ACTIONS.
-
-The humans are only capable of performing the actions mentioned above.
-User will provide a [Social context], a [Task] that the robot needs to do, a description of the location and optionally a [Rough Scenario]. 
-Your generated scenario will be programmatically simulated through a pipeline into a scenario in the Gazebo physics simulator.
 Rules:
-- The humans can say "WAIT", "PROCEED", "EXCUSE ME" to the robot  to aid in navigation. The robot can say "WAIT", "PROCEED", "EXCUSE ME", "ACKNOWLEDGED" to the humans to aid in navigation. 
-- When the user provides a Rough Scenario, ensure your final scenario is strictly aligned to the rough scenario
-- The humans in the simulator are SIMPLIFIED OBJECTS that only can move in 2D, send and receive simple phrases, detect the robot, look at the robot, group together with other humans, navigate to a predefined goal and change their trajectory conditioned on the robot’s position and velocity.
-- When using groups in the scenario, add all group members to the humans in the scenario. Having only 1 human with 'INTERACTING WITH GROUP' task is incorrect.
+- Ensure the output scenario is strictly aligned to the rough scenario
+- When the scenario involves a GROUP, add all group members to the number of humans in the scenario.
+- Specify locations in general terms (for example: 'intersection', 'stairs', 'open area' etc.), rather than specific location names (for example: 'intersection A', 'stairs B').
+- In the simulator, the humans are simulated as cylinders with wheels, with sensors and a speaker. So, [HUMAN BEHAVIOR] should ONLY consist of behaviors like moving and interacting with the robot. Do not make the humans manipulate other objects in the scene, like pushing/pulling/carrying/moving objects etc. Do not suggest human behavior that a cylinder with sensors in the simulation cannot do. 
+- The behavior of the human cylinders can only depend on the robot's behavior and not on what the other humans are doing.
+- The human cylinders in the simulation have sensors that allow them to perform the following functions:
+    - Check if the robot is visible
+    - Check if the human has reached their goal
+    - Check if robot is gesturing towards the human: The robot can say "WAIT", "PROCEED", "EXCUSE ME", "ACKNOWLEDGED".
+    - Check if the robot is currently moving
+    - Check if the robot is blocking the human's path
+    - Perform a gesture: The humans can say "WAIT", "PROCEED" and "EXCUSE ME" to the robot.
+    - Look in the direction of the robot
+    - Follow the robot
+    - Get scared of the robot and avoid it
+    - Give way to the robot
+    - Block the robot's path
+        
+    NOTE: AT ANY GIVEN POINT OF TIME, THE HUMAN CAN ONlY PEFORM ANY ONE OF THE ABOVE ACTIONS.
 
 Design a scenario relevant to the following specifications:
 
@@ -58,13 +61,14 @@ Design a scenario relevant to the following specifications:
 
 YOU ADHERE TO THE FOLLOWING JSON FORMAT STRICTLY. 
 {
-'Scenario Description': <very detailed description of the scenario >,
+'Scenario Description': <very detailed description of the scenario, including the approximate path that the robot and the humans take and how the humans behave>,
 'Number of Humans': <Number of humans that are involved in the scenario>,
 ‘Human behavior': {
 ‘Human 1’: <Describe the behavior of Human 1>,
 ‘Human 2’: <Describe the behavior of Human 2>,
 },
-'Expected Robot Behavior': <Describe the behavior expected from the robot>
+'Expected Robot Behavior': <Describe the behavior expected from the robot>,
+'Reasoning': <Reasoning behind the scenario and how the human behaviors can be emulated using human cylinders in the simulation>
 }
 """}]},             
 {
@@ -72,13 +76,13 @@ YOU ADHERE TO THE FOLLOWING JSON FORMAT STRICTLY.
    "content":[{
         "type":"text",
         "text":"""
-            {'Scenario Description': "The robot is trying to deliver coffee from the Kitchen to the Living Room and encounters one of the elderly residents entering the Kitchen from the Living Room through the  Doorway.",
+            {'Scenario Description': "The robot is trying to deliver coffee from one room to another through a doorway and encounters one of the elderly residents entering the room via the doorway.",
             'Number of Humans': 1,
             'Human Behavior':{
-            'Human 1': Human 1 is going from going to kitchen from the living room. If the robot is very close-by, Human asks the robot to stop and waits (for a maximum of 5s) for the robot to stop, then continues navigating. Ignores the robot if it asks the human to wait.
+            'Human 1': If the robot is very close-by, Human asks the robot to stop and waits (for a maximum of 5s) for the robot to stop, then continues navigating. Human ignores the robot if the robot says "WAIT".},
+            'Expected Robot Behavior': "The robot says "EXCUSE ME" to the resident. It waits for the resident to be well clear of the Doorway before going through the Doorway to the Living Room in a slow pace."
             },
-            'Expected Robot Behavior': "The robot says "I AM HERE" to the resident. It waits for the resident to be well clear of the Doorway before going through the Doorway to the Living Room in a slow pace."
-            }
+            'Reasoning': A socially compliant robot should make its presence known to the elderly residents when they are unaware of the robot to avoid collisions. When performing a non-critical task like delivering coffee, the robot should not be obstructing the elderly resident's way of life and prioritize the resident's comfort over task efficiency. For Human 1, Navigation can be simulated by moving the human cylinder, speaking to the robot can be simulated with the speaker on the cylinder.
             """
             }]  
         }
@@ -99,15 +103,17 @@ Design a scenario relevant to the following specifications:
 [Location]:{kwargs['location']}
 [Rough Scenario]:{kwargs['rough_scenario']}
 
-YOU ADHERE TO THE FOLLOWING JSON FORMAT STRICTLY."""+""" 
+YOU ADHERE TO THE FOLLOWING JSON FORMAT STRICTLY."""+"""
 {
 'Scenario Description': <very detailed description of the scenario >,
 'Number of Humans': <Number of humans that are involved in the scenario>,
 ‘Human behavior': {
 ‘Human 1’: <Describe the behavior of Human 1>,
 ‘Human 2’: <Describe the behavior of Human 2>,
+....
 },
 'Expected Robot Behavior': <Describe the behavior expected from the robot>
+'Reasoning': <Reasoning behind the scenario and how the human behaviors can be emulated using human cylinders in the simulation>
 }
 
 """

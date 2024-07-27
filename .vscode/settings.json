@@ -3,5 +3,6 @@
         "comments": "",
         "textMateRules": []
     },
-    "python.analysis.typeCheckingMode": "basic"
+    "python.analysis.typeCheckingMode": "basic",
+    "cmake.sourceDirectory": "/home/shashank/code/packages/SoNaS/locations/bookstore"
 }

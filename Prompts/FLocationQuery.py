@@ -23,7 +23,7 @@ The image shows a location which is represented by a scene graph. A scene graph 
 A person/ can only move from one node to another if the two nodes are connected by an edge. 
 The scene graph in json file format is also given below, where each node and edge has a unique id, a type, the pixel position of the node in the image (pos). 
 <SCENE GRAPH>
-The type of a node is one among <NODE TYPES>. 
+The type of a node is one among: <NODE TYPES> while the edges are one among: <EDGE TYPES>. 
 The graph is bidirectional and each edge is also represented with the edge list 'links' in the json given below.  
 Remember that a node can only be reached from another node if they have an edge between them in the scene graph json.
 Now answer the following questions below:
@@ -352,6 +352,7 @@ Format your output in JSON as given below:
         #add json and image to first user prompt
         full_prompt[1]["content"][0]["text"] = full_prompt[1]["content"][0]["text"].replace('<SCENE GRAPH>',kwargs['scene_graph'])
         full_prompt[1]["content"][0]["text"] = full_prompt[1]["content"][0]["text"].replace('<NODE TYPES>',kwargs['node_types'])
+        full_prompt[1]["content"][0]["text"] = full_prompt[1]["content"][0]["text"].replace('<EDGE TYPES>',kwargs['edge_types'])
         full_prompt[1]["content"][1]["image_url"]["url"] = full_prompt[1]["content"][1]["image_url"]["url"].replace('<ENCODED IMAGE>',kwargs['encoded_img'])
         
         #add scenario request to last prompt

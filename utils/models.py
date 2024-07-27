@@ -133,17 +133,23 @@ class GPTModel:
                             print(f"Incorrect keys:{output.keys()}")
                             #replies = error_callback(response.choices[0].message.content,'keys',kwargs['expected_keys'])
                             raise ValueError
-                        
+                        #check if the values o
                         if 'tree' in kwargs['expected_keys']:
                             try:
-                                test_xml = ET.fromstring(output['tree'])
+                                test_xml = ET.fromstring(output['tree'])  
+                                print("Recieved Valid XML")
                             except:
                                 print("ParseError")
                                 replies = error_callback(response.choices[0].message.content,'xml',[])
                                 raise ValueError
-                            
-                        print("Recieved JSON Parseable output")
-                        return output
+                            if utils.validate_bt(test_xml,kwargs["node_library"]):
+                                print("Recieved Valid BT")
+                                return output
+                            else:
+                                raise ValueError("Recieved JSON Parseable output but it is not a valid XML tree")
+                        
+                        if len(replies) == 0:
+                            return output
                     else:
                         return output
                 except (ValueError,json.JSONDecodeError) as e:

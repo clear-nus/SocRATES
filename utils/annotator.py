@@ -10,15 +10,20 @@ import json
 import secrets
 
 class SceneGraphBuilder:
-    def __init__(self, root, image_path,zoomed_img_size,out_path,node_types, edge_types):
+    def __init__(self, root, image_path,img_zoom,img_rotate,out_path,node_types, edge_types):
         self.root = root
         self.root.title("Scene Graph Builder")
-        self.zoomed_img_size = zoomed_img_size
+        self.zoomed_img_size = img_zoom
         # Load image
-        self.image = Image.open(image_path)
+        image = Image.open(image_path).convert('RGB')
+        print(image.size)
+        self.image = image.rotate(img_rotate, expand=True)
+        print(image.size)
+        width,height = self.image.size
+        self.zoom = img_zoom
+        self.image = self.image.resize((round(width*self.zoom),round(height*self.zoom)))
         print(self.image.size)
         self.image_tk = ImageTk.PhotoImage(self.image)
-
         # Create canvas for image display
         self.canvas = tk.Canvas(root, width=self.image.size[0], height=self.image.size[1])
         self.canvas.pack()
@@ -26,8 +31,8 @@ class SceneGraphBuilder:
         # Display image on canvas
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.image_tk)
         self.output_image = self.image.copy()
-        self.output_image_draw = ImageDraw.Draw(self.output_image)
-        
+        self.output_image_draw = ImageDraw.Draw(self.output_image,mode='RGBA')
+        print(self.output_image_draw.mode)
         # Initialize NetworkX graph
         self.graph = nx.Graph()
 
@@ -53,10 +58,10 @@ class SceneGraphBuilder:
         self.pimgfont = "nimbus"
         
         self.zoomed_oval_size = 10
-        self.parent_oval_size = 15
+        self.parent_oval_size = 40
         
         self.zoomed_imgfontsize = 20
-        self.parent_imgfontsize = 30
+        self.parent_imgfontsize = 40
         self.zoomed_imgfont = ImageFont.truetype("arial.ttf", self.zoomed_imgfontsize)
         self.parent_imgfont = ImageFont.truetype("arial.ttf", self.parent_imgfontsize)
         self.node_names = []
@@ -86,17 +91,25 @@ class SceneGraphBuilder:
         for i,n in enumerate(self.node_types):
             dialog_msg += f"\n{i+1}:{n}"
         dialog_msg+='\n'
-        node_name = None#input("Enter the node's name, e.g. 'kitchen' (optional)\n")#simpledialog.askstring("Node Name", "Enter the node's name, e.g. 'Kitchen' (optional):")
-        node_type = int(input(dialog_msg))#simpledialog.askinteger("Node Type", dialog_msg)
+        node_name = None #input("Enter the node's name, e.g. 'kitchen' (optional)\n")#simpledialog.askstring("Node Name", "Enter the node's name, e.g. 'Kitchen' (optional):")
+        while True:
+            try:
+                node_type = int(input(dialog_msg))#simpledialog.askinteger("Node Type", dialog_msg)
+                print(node_type)
+                break
+            except ValueError:
+                print("Invalid node type, try again")
+                
         
+        random_node_name = ''
         if node_name == None:
             node_name = ''
+            while True:
+                random_node_name = secrets.token_hex(1) #random 4 digit alphanumeric
+                if random_node_name not in self.node_names:
+                    self.node_names.append(random_node_name)
+                    break
         
-        while True:
-            random_node_name = secrets.token_hex(1) #random 4 digit alphanumeric
-            if random_node_name not in self.node_names:
-                self.node_names.append(random_node_name)
-                break
         full_node_name = random_node_name + node_name
         if node_type and 0<node_type<len(self.node_types)+1:
             # Add node to graph
@@ -105,14 +118,21 @@ class SceneGraphBuilder:
             self.nodes[full_node_name] = (x, y)
 
             # Display node visually
-            self.canvas.create_oval(x - self.parent_oval_size, y - self.parent_oval_size, x + self.parent_oval_size, y + self.parent_oval_size, fill="red")
-            self.canvas.create_text(x-0.5, y-0.5, text=full_node_name,font=(self.pimgfont, self.parent_imgfontsize), fill="black")
+            #self.canvas.create_oval(x - self.parent_oval_size, y - self.parent_oval_size, x + self.parent_oval_size, y + self.parent_oval_size, fill="red")
+            self.canvas.create_rectangle(x - self.parent_oval_size, y - self.parent_oval_size, x + self.parent_oval_size, y + self.parent_oval_size, fill='', width = 5, outline="blue")
+            #self.canvas.create_text(x-0.5, y-0.5, text=full_node_name,font=(self.pimgfont, self.parent_imgfontsize), fill="black")
+            self.canvas.create_text(x, y, text=full_node_name,font=(self.pimgfont, self.parent_imgfontsize), fill="black")
+            print(f'x-:{x - self.parent_oval_size}, y-:{y - self.parent_oval_size}')
+            print(f'x+:{x + self.parent_oval_size}, y+:{y + self.parent_oval_size}')
+            print(f'full node name:{full_node_name}')
             
-            self.output_image_draw.ellipse((x - self.parent_oval_size, y - self.parent_oval_size, x + self.parent_oval_size, y + self.parent_oval_size), fill=(255,0,0))
-            self.output_image_draw.text((x-0.5, y-0.5), full_node_name, fill=(0,0,0),font=self.parent_imgfont)
+            #self.output_image_draw.ellipse((x - self.parent_oval_size, y - self.parent_oval_size, x + self.parent_oval_size, y + self.parent_oval_size), fill=(255,0,0))
+            self.output_image_draw.rectangle((x - self.parent_oval_size, y - self.parent_oval_size, x + self.parent_oval_size, y + self.parent_oval_size),fill=None,width=5,outline='blue')
+            #self.output_image_draw.text((x-0.5, y-0.5), full_node_name, fill=(0,0,0),font=self.parent_imgfont)
+            self.output_image_draw.text((x, y), full_node_name,anchor='mm', fill='black',font=self.parent_imgfont)
             
             #self.open_zoomed_window(x, y, str(self.node_number)) no more child nodes
-    
+    '''
     def open_zoomed_window(self, x, y, parent_node_number):
         print("Opening Zoomed window")
         zoom_window = tk.Toplevel(self.root)
@@ -166,7 +186,7 @@ class SceneGraphBuilder:
         # Display child nodes in the zoomed image
         self.zoomed_images_draw[parent_node_number].ellipse((x-self.zoomed_oval_size, y-self.zoomed_oval_size, x+self.zoomed_oval_size, y+self.zoomed_oval_size), fill=(0,255,0))
         self.zoomed_images_draw[parent_node_number].text((x, y), str(chr(self.fine_node_counter)), fill=(0,0,0),font=self.zoomed_imgfont)
-        
+    '''
     def start_edge(self, event):
         #print("Start Edge")
         self.current_start_node = self.get_nearest_node(event.x, event.y)
@@ -191,17 +211,21 @@ class SceneGraphBuilder:
                 dialog_msg+='\n'
                 #edge_type = simpledialog.askinteger("Node Type", dialog_msg)
                 edge_type = int(input(dialog_msg))
-                
-                
-                self.graph.add_edge(self.current_start_node, end_node,type = self.edge_types[edge_type])
+                print(edge_type)
+                print(self.edge_types[edge_type])
+                self.graph.add_edge(self.current_start_node, end_node,type = self.edge_types[edge_type-1])
                 self.edges.append((self.current_start_node, end_node))
                 
+                current_start_node = self.nodes[self.current_start_node]
                 # Display edge visually
-                self.canvas.create_line(*self.nodes[self.current_start_node], *self.nodes[end_node], fill="blue")
-                self.output_image_draw.line([*self.nodes[self.current_start_node], event.x, event.y], fill=(0,0,255), width=3)
+                self.canvas.create_line(*current_start_node, *self.nodes[end_node], fill="blue")
+                self.output_image_draw.line([current_start_node[0],current_start_node[1], event.x, event.y], fill="red", width=3)
                 
                 #print([*self.nodes[self.current_start_node], event.x, event.y])
             self.current_start_node = None
+            self.current_start_node = None
+            
+            self.current_start_node = None          
             
 
     def get_nearest_node(self, x, y):
@@ -229,12 +253,15 @@ if __name__ == "__main__":
     
     root = tk.Tk()
     fine_root = tk.Tk()
-    zoomed_img_size = 250
+    img_zoom = 1.0
+    img_rotate= 0
     node_types = [
          'INTERSECTION',
          'LIFT',
          'OPEN AREA',
          'NARROW AISLE',
+         'MID-PASSAGEWAY',
+         'END-PASSAGEWAY',
          'ROOM',
          'CORNER']
     edge_types = [
@@ -245,28 +272,12 @@ if __name__ == "__main__":
         'STAIRS',
         'ROOM ENTRANCE/EXIT'
     ]
-    print("""
+    msg = f"""
           -------------------CONTROLS--------------------------------------
           DOUBLE CLICK TO ADD A NODE (THEN SELECT THE NODE TYPE)
           CLICK AND DRAG BETWEEN 2 NODES TO ADD AN EDGE.
           PRESS RETURN KEY TO SAVE ALL THE IMAGES
-          ----ADD NODES FOR THE FOLLOWING REGIONS IN YOUR MAP--------------
-          1. INTERSECTION
-          2. LIFT
-          3. OPEN AREA
-          4. NARROW AISLE
-          5. ROOM
-          6. CORNER
-          
-          -- CONNECT THE NODES WITH EDGES OF THE FOLLOWING TYPES----------
-          
-          1. DOORWAY
-          2. NARROW DOORWAY
-          3. PASSAGEWAY
-          4. STAIRS
-          5. ROOM ENTRANCE/EXIT
-          
-          ---------------------------------------------------------------------
-          """)
-    app = SceneGraphBuilder(root, args.img,zoomed_img_size,args.out,node_types,edge_types)  # Replace with your own image path
+          ----ADD NODES FOR THE FOLLOWING REGIONS IN YOUR MAP--------------""" +'\n'+ '\n'.join([f"{i+1}:{n}" for i,n in enumerate(node_types)]) + '\n'+"""-- CONNECT THE NODES WITH EDGES OF THE FOLLOWING TYPES----------"""+ '\n'+'\n'.join([f"{i+1}:{n}" for i,n in enumerate(edge_types)]) + '\n'+"""--------------------------------------------------------------------"""
+    print(msg)
+    app = SceneGraphBuilder(root, args.img,img_zoom,img_rotate,args.out,node_types,edge_types)  # Replace with your own image path
     root.mainloop()
