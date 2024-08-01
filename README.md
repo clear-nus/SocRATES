@@ -14,6 +14,7 @@ SoNAS consists of 3 submodules:
 To generate scenarios in your own map, follow these steps:
 1. run ``` python annotator.py --img:=<path to map.pgm file> --out:=<location for output image>``` and follow the instructions to generate a map image annotated with a scene graph. An example is shown in the [warehouse annotated map](locations/Warehouse/scene_graph/scene_graph.png)
 2. Edit the ```inputs.yaml``` file and specify the parameters for generating the scenario. Remember to specify the paths for the ROS2 packages depending on your ROS2 workspace
-3. Build your ROS2 workspace with ``` colcon build ``` 
-4. ``` ros2 launch hunav_gazebo_wrapper scenario.launch.py ```
-5. Control the robot with teleop node. E.g.: ``` ros2 run turtlebot3_teleop teleop_keyboard ``` (we are adding support for running any ROS2 based navigation algorithm soon.)
+3. Run the scenario generator with ``` python main.py ```
+4. Build your ROS2 workspace with ``` colcon build ``` 
+5. ``` ros2 launch hunav_gazebo_wrapper scenario.launch.py ```
+6. Control the robot with teleop node. E.g.: ``` ros2 run turtlebot3_teleop teleop_keyboard ``` (we are adding support for running any ROS2 based navigation algorithm soon.)
