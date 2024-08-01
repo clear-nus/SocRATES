@@ -1,1 +1,10 @@
-locations/new_loc_test
+locations/arena_nus_com1_building
+locations/arena_nus_com2_building
+locations/arena_nus_com3_building
+locations/hospital
+testing_scripts/
+templates/
+.vscode/
+responses/
+
+

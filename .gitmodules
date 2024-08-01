@@ -1,0 +1,6 @@
+[submodule "ros_packages/hunav_gazebo_wrapper"]
+	path = ros_packages/hunav_gazebo_wrapper
+	url = https://github.com/raoshashank/hunav_gazebo_wrapper
+[submodule "ros_packages/hunav_sim"]
+	path = ros_packages/hunav_sim
+	url = https://github.com/raoshashank/hunav_sim
