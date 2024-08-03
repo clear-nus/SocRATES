@@ -119,8 +119,8 @@ class ScenarioGenerator:
 
     def pix2world(self,px):
         return [
-            px[0]*self.map_params['resolution'] - self.map_params['origin'][0],
-            px[1]*self.map_params['resolution'] - self.map_params['origin'][1],
+            px[0]*self.map_params['resolution'] + self.map_params['origin'][0],
+            -1.0*(px[1]*self.map_params['resolution'] + self.map_params['origin'][1])
         ]
 
     def instantiate_simulator(self,file_paths,groupids,trajectories,behaviors_trees):

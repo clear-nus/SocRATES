@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from tkinter import simpledialog
 from PIL import Image, ImageTk, ImageDraw, ImageFont
 import networkx as nx
@@ -8,29 +9,34 @@ from PIL import Image
 import os 
 import json
 import secrets
-
+import numpy as np
 class SceneGraphBuilder:
-    def __init__(self, root, image_path,img_zoom,img_rotate,out_path,node_types, edge_types):
+    def __init__(self, root, zoom, image_path,out_path,node_types, edge_types):
         self.root = root
         self.root.title("Scene Graph Builder")
-        self.zoomed_img_size = img_zoom
         # Load image
-        image = Image.open(image_path).convert('RGB')
-        print(image.size)
-        self.image = image.rotate(img_rotate, expand=True)
-        print(image.size)
+        self.image = Image.open(image_path).convert('RGB')
         width,height = self.image.size
-        self.zoom = img_zoom
+        self.zoom = zoom
+        self.unscaled_image = self.image.copy()
         self.image = self.image.resize((round(width*self.zoom),round(height*self.zoom)))
         print(self.image.size)
         self.image_tk = ImageTk.PhotoImage(self.image)
         # Create canvas for image display
-        self.canvas = tk.Canvas(root, width=self.image.size[0], height=self.image.size[1])
+        # vbar = tk.Scrollbar(self.root,orient=tk.VERTICAL)
+        # hbar = tk.Scrollbar(self.root,orient=tk.HORIZONTAL)
+        # vbar.grid(row=0, column=1, sticky='ns')
+        # hbar.grid(row=1, column=0, sticky='we')
+        self.canvas = tk.Canvas(root, width=self.image.size[0], height=self.image.size[1])#,xscrollcommand=hbar.set,yscrollcommand=vbar.set)
+        # self.canvas.grid(row=0, column=0, sticky='nswe')
+        # self.canvas.update()
+        # vbar.configure(command = self.scroll_x)
+        # hbar.configure(command = self.scroll_y)
         self.canvas.pack()
 
         # Display image on canvas
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.image_tk)
-        self.output_image = self.image.copy()
+        self.output_image = self.unscaled_image.copy()
         self.output_image_draw = ImageDraw.Draw(self.output_image,mode='RGBA')
         print(self.output_image_draw.mode)
         # Initialize NetworkX graph
@@ -47,13 +53,15 @@ class SceneGraphBuilder:
         self.canvas.bind("<Button-1>", self.start_edge)
         self.canvas.bind("<B1-Motion>", self.drag_edge)
         self.canvas.bind("<ButtonRelease-1>", self.end_edge)
+        #self.canvas.bind("<ButtonPress-3>",self.move_from)
+        #self.canvas.bind("<B3-Motion>",self.move_to)
         root.bind("<Alt-s>",self.save_canvas_as_img)
         self.fine_node_counter = 64
         self.current_start_node = None
         self.zoomed_images = {}
         self.zoomed_images_draw = {}
         self.img_save_path = out_path
-        
+        self.image_origin = np.array([0.0,0.0])
         self.zimgfont = "nimbus"
         self.pimgfont = "nimbus"
         
@@ -113,7 +121,8 @@ class SceneGraphBuilder:
         full_node_name = random_node_name + node_name
         if node_type and 0<node_type<len(self.node_types)+1:
             # Add node to graph
-            self.graph.add_node(full_node_name, type=self.node_types[node_type-1], pos=(x, y))
+            print((x,y))
+            self.graph.add_node(full_node_name, type=self.node_types[node_type-1], pos=(round(x/self.zoom), round(y/self.zoom)))
             
             self.nodes[full_node_name] = (x, y)
 
@@ -127,9 +136,9 @@ class SceneGraphBuilder:
             print(f'full node name:{full_node_name}')
             
             #self.output_image_draw.ellipse((x - self.parent_oval_size, y - self.parent_oval_size, x + self.parent_oval_size, y + self.parent_oval_size), fill=(255,0,0))
-            self.output_image_draw.rectangle((x - self.parent_oval_size, y - self.parent_oval_size, x + self.parent_oval_size, y + self.parent_oval_size),fill=None,width=5,outline='blue')
+            self.output_image_draw.rectangle((round((x - self.parent_oval_size)/self.zoom), round((y - self.parent_oval_size)/self.zoom), round((x + self.parent_oval_size)/self.zoom), round((y + self.parent_oval_size)/self.zoom)),fill=None,width=5,outline='blue')
             #self.output_image_draw.text((x-0.5, y-0.5), full_node_name, fill=(0,0,0),font=self.parent_imgfont)
-            self.output_image_draw.text((x, y), full_node_name,anchor='mm', fill='black',font=self.parent_imgfont)
+            self.output_image_draw.text((round(x/self.zoom), round(y/self.zoom)), full_node_name,anchor='mm', fill='black',font=self.parent_imgfont)
             
             #self.open_zoomed_window(x, y, str(self.node_number)) no more child nodes
     '''
@@ -219,7 +228,7 @@ class SceneGraphBuilder:
                 current_start_node = self.nodes[self.current_start_node]
                 # Display edge visually
                 self.canvas.create_line(*current_start_node, *self.nodes[end_node], fill="blue")
-                self.output_image_draw.line([current_start_node[0],current_start_node[1], event.x, event.y], fill="red", width=3)
+                self.output_image_draw.line([round(current_start_node[0]/self.zoom),round(current_start_node[1]/self.zoom), round(self.nodes[end_node][0]/self.zoom), round(self.nodes[end_node][1]/self.zoom)], fill="red", width=3)
                 
                 #print([*self.nodes[self.current_start_node], event.x, event.y])
             self.current_start_node = None
@@ -227,6 +236,15 @@ class SceneGraphBuilder:
             
             self.current_start_node = None          
             
+    def move_from(self, event):
+        ''' Remember previous coordinates for scrolling with the mouse '''
+        self.image_origin[0]-=event.x
+        self.image_origin[1]-=event.y
+
+    def move_to(self, event):
+        ''' Drag (move) canvas to the new position '''
+        self.canvas.scan_dragto(event.x, event.y, gain=1)
+        #self.show_image()  # redraw the image
 
     def get_nearest_node(self, x, y):
         #print("Getting nearest Node")
@@ -248,13 +266,12 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--img", required=True, help="path to image file")
+    parser.add_argument("--zoom",required=True, help="zoom factor for viewing image")
     parser.add_argument("--out", required=True, help="output folder") 
     args = parser.parse_args()
     
     root = tk.Tk()
     fine_root = tk.Tk()
-    img_zoom = 1.0
-    img_rotate= 0
     node_types = [
          'INTERSECTION',
          'LIFT',
@@ -279,5 +296,5 @@ if __name__ == "__main__":
           PRESS RETURN KEY TO SAVE ALL THE IMAGES
           ----ADD NODES FOR THE FOLLOWING REGIONS IN YOUR MAP--------------""" +'\n'+ '\n'.join([f"{i+1}:{n}" for i,n in enumerate(node_types)]) + '\n'+"""-- CONNECT THE NODES WITH EDGES OF THE FOLLOWING TYPES----------"""+ '\n'+'\n'.join([f"{i+1}:{n}" for i,n in enumerate(edge_types)]) + '\n'+"""--------------------------------------------------------------------"""
     print(msg)
-    app = SceneGraphBuilder(root, args.img,img_zoom,img_rotate,args.out,node_types,edge_types)  # Replace with your own image path
+    app = SceneGraphBuilder(root, float(args.zoom),args.img,args.out,node_types,edge_types)  # Replace with your own image path
     root.mainloop()

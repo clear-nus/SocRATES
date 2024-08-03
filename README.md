@@ -12,7 +12,7 @@ SoNAS consists of 3 submodules:
     - For the 2 ROS2 packages, clone the submodules into your catkin workspace and build with the ROS2 ```colcon``` tool
 ## Generating your own scenarios
 To generate scenarios in your own map, follow these steps:
-1. run ``` python annotator.py --img:=<path to map.pgm file> --out:=<location for output image>``` and follow the instructions to generate a map image annotated with a scene graph. An example is shown in the [warehouse annotated map](locations/Warehouse/scene_graph/scene_graph.png)
+1. run ``` python annotator.py --img=<path to map.pgm file> --out=<location for output image> --zoom=<required zoom>``` and follow the instructions to generate a map image annotated with a scene graph. An example is shown in the [warehouse annotated map](locations/Warehouse/scene_graph/scene_graph.png). 
 2. Edit the ```inputs.yaml``` file and specify the parameters for generating the scenario. Remember to specify the paths for the ROS2 packages depending on your ROS2 workspace
 3. Run the scenario generator with ``` python main.py ```
 4. Build your ROS2 workspace with ``` colcon build ``` 
