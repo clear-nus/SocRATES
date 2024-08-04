@@ -1,0 +1,258 @@
+{
+    "directed": false,
+    "multigraph": false,
+    "graph": {},
+    "nodes": [
+        {
+            "type": "AISLE",
+            "pos": [
+                31,
+                149
+            ],
+            "id": "11"
+        },
+        {
+            "type": "CORNER",
+            "pos": [
+                28,
+                318
+            ],
+            "id": "07"
+        },
+        {
+            "type": "INTERSECTION",
+            "pos": [
+                186,
+                320
+            ],
+            "id": "f7"
+        },
+        {
+            "type": "INTERSECTION",
+            "pos": [
+                339,
+                317
+            ],
+            "id": "d9"
+        },
+        {
+            "type": "INTERSECTION",
+            "pos": [
+                507,
+                319
+            ],
+            "id": "aa"
+        },
+        {
+            "type": "OPEN AREA",
+            "pos": [
+                686,
+                501
+            ],
+            "id": "69"
+        },
+        {
+            "type": "OPEN AREA",
+            "pos": [
+                886,
+                493
+            ],
+            "id": "cf"
+        },
+        {
+            "type": "CORNER",
+            "pos": [
+                80,
+                660
+            ],
+            "id": "0e"
+        },
+        {
+            "type": "AISLE",
+            "pos": [
+                72,
+                782
+            ],
+            "id": "32"
+        },
+        {
+            "type": "OPEN AREA",
+            "pos": [
+                393,
+                653
+            ],
+            "id": "cb"
+        },
+        {
+            "type": "OPEN AREA",
+            "pos": [
+                790,
+                667
+            ],
+            "id": "ba"
+        },
+        {
+            "type": "INTERSECTION",
+            "pos": [
+                893,
+                315
+            ],
+            "id": "99"
+        },
+        {
+            "type": "CORNER",
+            "pos": [
+                1124,
+                309
+            ],
+            "id": "e3"
+        },
+        {
+            "type": "AISLE",
+            "pos": [
+                186,
+                169
+            ],
+            "id": "f5"
+        },
+        {
+            "type": "AISLE",
+            "pos": [
+                339,
+                162
+            ],
+            "id": "48"
+        },
+        {
+            "type": "AISLE",
+            "pos": [
+                503,
+                148
+            ],
+            "id": "47"
+        },
+        {
+            "type": "AISLE",
+            "pos": [
+                1115,
+                134
+            ],
+            "id": "c5"
+        },
+        {
+            "type": "AISLE",
+            "pos": [
+                883,
+                133
+            ],
+            "id": "79"
+        }
+    ],
+    "links": [
+        {
+            "type": "NARROW PASSAGEWAY",
+            "source": "11",
+            "target": "07"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "07",
+            "target": "f7"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "f7",
+            "target": "d9"
+        },
+        {
+            "type": "NARROW PASSAGEWAY",
+            "source": "f7",
+            "target": "f5"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "d9",
+            "target": "aa"
+        },
+        {
+            "type": "NARROW PASSAGEWAY",
+            "source": "d9",
+            "target": "48"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "aa",
+            "target": "47"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "aa",
+            "target": "99"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "aa",
+            "target": "69"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "69",
+            "target": "99"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "69",
+            "target": "ba"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "69",
+            "target": "cf"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "cf",
+            "target": "99"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "cf",
+            "target": "ba"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "cf",
+            "target": "e3"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "0e",
+            "target": "32"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "0e",
+            "target": "cb"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "cb",
+            "target": "ba"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "99",
+            "target": "e3"
+        },
+        {
+            "type": "NARROW PASSAGEWAY",
+            "source": "99",
+            "target": "79"
+        },
+        {
+            "type": "NARROW PASSAGEWAY",
+            "source": "e3",
+            "target": "c5"
+        }
+    ]
+}

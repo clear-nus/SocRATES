@@ -1,0 +1,196 @@
+{
+    "directed": false,
+    "multigraph": false,
+    "graph": {},
+    "nodes": [
+        {
+            "type": "CORNER",
+            "pos": [
+                142,
+                26
+            ],
+            "id": "a9"
+        },
+        {
+            "type": "OPEN AREA",
+            "pos": [
+                135,
+                67
+            ],
+            "id": "fd"
+        },
+        {
+            "type": "OPEN AREA",
+            "pos": [
+                109,
+                133
+            ],
+            "id": "94"
+        },
+        {
+            "type": "OPEN AREA",
+            "pos": [
+                109,
+                164
+            ],
+            "id": "06"
+        },
+        {
+            "type": "INTERSECTION",
+            "pos": [
+                141,
+                129
+            ],
+            "id": "d4"
+        },
+        {
+            "type": "INTERSECTION",
+            "pos": [
+                142,
+                147
+            ],
+            "id": "b4"
+        },
+        {
+            "type": "END-PASSAGEWAY",
+            "pos": [
+                88,
+                172
+            ],
+            "id": "c2"
+        },
+        {
+            "type": "MID-PASSAGEWAY",
+            "pos": [
+                85,
+                134
+            ],
+            "id": "a8"
+        },
+        {
+            "type": "MID-PASSAGEWAY",
+            "pos": [
+                85,
+                90
+            ],
+            "id": "f3"
+        },
+        {
+            "type": "CORNER",
+            "pos": [
+                90,
+                33
+            ],
+            "id": "ab"
+        },
+        {
+            "type": "END-PASSAGEWAY",
+            "pos": [
+                64,
+                32
+            ],
+            "id": "1d"
+        },
+        {
+            "type": "END-PASSAGEWAY",
+            "pos": [
+                182,
+                24
+            ],
+            "id": "01"
+        },
+        {
+            "type": "END-PASSAGEWAY",
+            "pos": [
+                172,
+                127
+            ],
+            "id": "d5"
+        },
+        {
+            "type": "END-PASSAGEWAY",
+            "pos": [
+                170,
+                146
+            ],
+            "id": "83"
+        }
+    ],
+    "links": [
+        {
+            "type": "NARROW PASSAGEWAY",
+            "source": "a9",
+            "target": "01"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "a9",
+            "target": "fd"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "fd",
+            "target": "d4"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "94",
+            "target": "a8"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "94",
+            "target": "d4"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "94",
+            "target": "06"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "06",
+            "target": "c2"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "06",
+            "target": "b4"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "d4",
+            "target": "b4"
+        },
+        {
+            "type": "NARROW PASSAGEWAY",
+            "source": "d4",
+            "target": "d5"
+        },
+        {
+            "type": "NARROW PASSAGEWAY",
+            "source": "b4",
+            "target": "83"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "c2",
+            "target": "a8"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "a8",
+            "target": "f3"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "f3",
+            "target": "ab"
+        },
+        {
+            "type": "PASSAGEWAY",
+            "source": "ab",
+            "target": "1d"
+        }
+    ]
+}
