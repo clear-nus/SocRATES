@@ -8,9 +8,9 @@ paths:
 location:
   name: 'Warehouse'
   description: 'Small Warehouse that consists of various racks and packaging areas. The warehouse consists of passageways (narrow and wide), intersections, narrow aisles, corners, open areas.'
-  scene_graph_file: /home/shashank/code/packages/SoNaS/locations/Warehouse/map/scene_graph.json
-  annotated_map_img_file: /home/shashank/code/packages/SoNaS/locations/Warehouse/scene_graph/scene_graph.png
-  map_params_file: /home/shashank/code/packages/SoNaS/locations/Warehouse/map/map.yaml
+  scene_graph_file:       /home/shashank/code/packages/SoNaS/locations/small_warehouse/scene_graph/scene_graph.json
+  annotated_map_img_file: /home/shashank/code/packages/SoNaS/locations/small_warehouse/scene_graph/scene_graph.png
+  map_params_file:        /home/shashank/code/packages/SoNaS/locations/small_warehouse/map/map.yaml
 
 context: "Robot is an emergency response robot inside a warehouse in a disaster situation."
 task: "The task of the robot is to guide humans to safety."

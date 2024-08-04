@@ -38,10 +38,10 @@ node_library:
   GiveWaytoRobot: ['agent_id', 'time_step']
   BlockRobot: ['agent_id', 'time_step']
 
-load_scenario_response: true
-load_trajectory_response: true
+load_scenario_response: false
+load_trajectory_response: false
 load_bt_response: false
 
-scenario_file: '/home/shashank/code/packages/SoNaS/responses/opensrc/scenario.json'
-trajectory_file: '/home/shashank/code/packages/SoNaS/responses/opensrc/trajectory.json'
-bt_file: '/home/shashank/code/packages/SoNaS/responses/opensrc/bt.json'
+scenario_file: '/home/shashank/code/packages/SoNaS/responses/scenario.json'
+trajectory_file: '/home/shashank/code/packages/SoNaS/responses/trajectory.json'
+bt_file: '/home/shashank/code/packages/SoNaS/responses/bt.json'

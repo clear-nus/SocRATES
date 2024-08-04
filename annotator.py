@@ -11,13 +11,14 @@ import json
 import secrets
 import numpy as np
 class SceneGraphBuilder:
-    def __init__(self, root, zoom, image_path,out_path,node_types, edge_types):
+    def __init__(self, root, zoom_in,zoom_out, image_path,out_path,node_types, edge_types):
         self.root = root
         self.root.title("Scene Graph Builder")
         # Load image
         self.image = Image.open(image_path).convert('RGB')
         width,height = self.image.size
-        self.zoom = zoom
+        self.zoom = zoom_in
+        self.zoom_out = zoom_out
         self.unscaled_image = self.image.copy()
         self.image = self.image.resize((round(width*self.zoom),round(height*self.zoom)))
         print(self.image.size)
@@ -36,7 +37,7 @@ class SceneGraphBuilder:
 
         # Display image on canvas
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.image_tk)
-        self.output_image = self.unscaled_image.copy()
+        self.output_image = self.unscaled_image.resize((round(width*self.zoom_out),round(height*self.zoom_out))).copy()
         self.output_image_draw = ImageDraw.Draw(self.output_image,mode='RGBA')
         print(self.output_image_draw.mode)
         # Initialize NetworkX graph
@@ -66,12 +67,10 @@ class SceneGraphBuilder:
         self.pimgfont = "nimbus"
         
         self.zoomed_oval_size = 10
-        self.parent_oval_size = 40
-        
-        self.zoomed_imgfontsize = 20
+        self.parent_oval_size = 40        
         self.parent_imgfontsize = 40
-        self.zoomed_imgfont = ImageFont.truetype("arial.ttf", self.zoomed_imgfontsize)
-        self.parent_imgfont = ImageFont.truetype("arial.ttf", self.parent_imgfontsize)
+        self.export_imgfontsize = round(40*self.zoom_out/self.zoom)
+        self.parent_imgfont = ImageFont.truetype("arial.ttf", self.export_imgfontsize)
         self.node_names = []
 
     def save_canvas_as_img(self, event):
@@ -135,12 +134,9 @@ class SceneGraphBuilder:
             print(f'x+:{x + self.parent_oval_size}, y+:{y + self.parent_oval_size}')
             print(f'full node name:{full_node_name}')
             
-            #self.output_image_draw.ellipse((x - self.parent_oval_size, y - self.parent_oval_size, x + self.parent_oval_size, y + self.parent_oval_size), fill=(255,0,0))
-            self.output_image_draw.rectangle((round((x - self.parent_oval_size)/self.zoom), round((y - self.parent_oval_size)/self.zoom), round((x + self.parent_oval_size)/self.zoom), round((y + self.parent_oval_size)/self.zoom)),fill=None,width=5,outline='blue')
-            #self.output_image_draw.text((x-0.5, y-0.5), full_node_name, fill=(0,0,0),font=self.parent_imgfont)
-            self.output_image_draw.text((round(x/self.zoom), round(y/self.zoom)), full_node_name,anchor='mm', fill='black',font=self.parent_imgfont)
+            self.output_image_draw.rectangle((round((x - self.parent_oval_size)*self.zoom_out/self.zoom), round((y - self.parent_oval_size)*self.zoom_out/self.zoom), round((x + self.parent_oval_size)*self.zoom_out/self.zoom), round((y + self.parent_oval_size)*self.zoom_out/self.zoom)),fill=None,width=round(5*self.zoom_out/self.zoom),outline='blue')
+            self.output_image_draw.text((round(x*self.zoom_out/self.zoom), round(y*self.zoom_out/self.zoom)), full_node_name,anchor='mm', fill='black',font=self.parent_imgfont)
             
-            #self.open_zoomed_window(x, y, str(self.node_number)) no more child nodes
     '''
     def open_zoomed_window(self, x, y, parent_node_number):
         print("Opening Zoomed window")
@@ -228,7 +224,7 @@ class SceneGraphBuilder:
                 current_start_node = self.nodes[self.current_start_node]
                 # Display edge visually
                 self.canvas.create_line(*current_start_node, *self.nodes[end_node], fill="blue")
-                self.output_image_draw.line([round(current_start_node[0]/self.zoom),round(current_start_node[1]/self.zoom), round(self.nodes[end_node][0]/self.zoom), round(self.nodes[end_node][1]/self.zoom)], fill="red", width=3)
+                self.output_image_draw.line([round(current_start_node[0]*self.zoom_out/self.zoom),round(current_start_node[1]*self.zoom_out/self.zoom), round(self.nodes[end_node][0]*self.zoom_out/self.zoom), round(self.nodes[end_node][1]*self.zoom_out/self.zoom)], fill="red", width=round(3*self.zoom_out/self.zoom))
                 
                 #print([*self.nodes[self.current_start_node], event.x, event.y])
             self.current_start_node = None
@@ -266,7 +262,8 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--img", required=True, help="path to image file")
-    parser.add_argument("--zoom",required=True, help="zoom factor for viewing image")
+    parser.add_argument("--zoom_in",required=True, help="zoom factor for viewing image")
+    parser.add_argument("--zoom_out",required=True, help="zoom factor for viewing image")
     parser.add_argument("--out", required=True, help="output folder") 
     args = parser.parse_args()
     
@@ -296,5 +293,5 @@ if __name__ == "__main__":
           PRESS RETURN KEY TO SAVE ALL THE IMAGES
           ----ADD NODES FOR THE FOLLOWING REGIONS IN YOUR MAP--------------""" +'\n'+ '\n'.join([f"{i+1}:{n}" for i,n in enumerate(node_types)]) + '\n'+"""-- CONNECT THE NODES WITH EDGES OF THE FOLLOWING TYPES----------"""+ '\n'+'\n'.join([f"{i+1}:{n}" for i,n in enumerate(edge_types)]) + '\n'+"""--------------------------------------------------------------------"""
     print(msg)
-    app = SceneGraphBuilder(root, float(args.zoom),args.img,args.out,node_types,edge_types)  # Replace with your own image path
+    app = SceneGraphBuilder(root, float(args.zoom_in), float(args.zoom_out),args.img,args.out,node_types,edge_types)  # Replace with your own image path
     root.mainloop()
