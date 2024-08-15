@@ -16,7 +16,7 @@ from tenacity import retry
 import json
 import xml.etree.ElementTree as ET
 import tiktoken
-
+import requests
 def error_callback(response,retry_reason,required_keys):
     if (retry_reason == 'json'):
         return [
@@ -85,35 +85,56 @@ def error_callback(response,retry_reason,required_keys):
         return []
 
 class GPTModel:
-    def __init__(self,model_name,project_id,tools = None) -> None:
+    def __init__(self,model_name,project_id,tools = None,debug = False) -> None:
         self.model_name = model_name
         #self.openai_temperature = config.OPENAI_TEMPERATURE
         self.client=OpenAI(project=project_id)
         self.messages = []
         self.tools = tools      
+        self.debug = debug
     
     def get_response(self,messages):
-        response = self.client.chat.completions.create(
-                                model = self.model_name,
-                                response_format={"type":'json_object'},
-                                messages=messages
-                                )
-        return response.choices[0].message.content    
+        # response = self.client.chat.completions.create(
+        #                         model = self.model_name,
+        #                         response_format={"type":'json_object'},
+        #                         messages=messages
+        #                         )
+        response = requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers =  {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {os.environ['OPENAI_API_KEY']}"
+                },
+                json = {
+                    'model':self.model_name,
+                    'messages':messages,
+                    'response_format': {"type": "json_object"}
+                }
+                )
+        try:
+            response = response.json()['choices'][0]['message']['content']
+        except KeyError:
+            raise Exception('Ill formatted response')
+        return response
 
     def is_response_valid(self,response,expected_keys=None):
         try:
             output = json.loads(response)
         except json.JSONDecodeError as e:
-            print("JSONDecodeError")
+            if self.debug:
+                print("JSONDecodeError")
             return False      
         
         if (float(response.count('\t'))/len(response))>0.5 or (float(response.count('\n'))/len(response))>0.5:
+            if self.debug:
+                print("Garbage output")
             return False
         
         if expected_keys!=None:
             output = {k.lower().replace('_','').replace(' ',''): v for k,v in output.items()}
             if sorted(output.keys()) != sorted(expected_keys):
-                print(f"Incorrect keys:{output.keys()}")
+                if self.debug:
+                    print(f"Incorrect keys:{output.keys()}")
                 return False
         
         return True

@@ -15,12 +15,23 @@ import pprint
 import xml.etree.ElementTree as ET
 
 def validate_bt(tree,node_library):
+    if len(tree.find('BehaviorTree'))!=1:
+        return False
+    
     for elem in tree.iter():
         if elem.tag not in node_library:
             print(f'{elem.tag} not in node_library')
             return False
         
         if elem.tag == 'SubTree':
+            if elem.attrib!={'ID': 'RegularNavTree', 'id': 'agentid', 'dt': 'timestep'}:
+                return False
+            #check if RegularNav is included for SubTree
+            included_files = tree.findall('.//include')
+            if len(included_files)!=1:
+                return False         
+            if included_files[0].attrib != {'path': 'BTRegularNav.xml'}:
+                return False
             continue
          
         #check for incorrect nodes
