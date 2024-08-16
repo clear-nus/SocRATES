@@ -13,7 +13,85 @@ import random
 from termcolor import colored
 import pprint
 import xml.etree.ElementTree as ET
+from termcolor import cprint
+from pydantic import BaseModel,StrictInt,PositiveInt
 
+class HumanTraj(BaseModel):
+    name: str
+    groupid: StrictInt
+    trajectory: list[str]
+    
+class Trajectories(BaseModel):
+    robot: list[str]
+    humans: list[HumanTraj]
+
+class StructuredTrajResponse(BaseModel):
+    reasoning: str
+    trajectories: Trajectories
+
+class StructuredBTResponse(BaseModel):
+    reasoning: str
+    tree: str
+    
+class Behavior(BaseModel):
+    name: str
+    behavior: str
+    
+class StructuredScenarioResponse(BaseModel):
+    scenariodescription: str
+    numberofhumans: int
+    humanbehavior: list[Behavior]
+    reasoning: str
+    
+
+eprint = lambda x:cprint(x,'red') #error
+iprint = lambda x:cprint(x,'yellow') #user input
+rprint = lambda x:cprint(x,'green') #result
+lprint = lambda x:cprint(x,'blue') #log
+
+def parse_questions_answers(file_path):
+    questions_answers = []
+
+    # Open the file and read its contents
+    with open(file_path, 'r') as file:
+        content = file.read()
+
+    # Split the content by the separator "*****"
+    qa_pairs = content.split("*****")
+
+    # Iterate over each QA pair
+    for qa in qa_pairs:
+        if qa.strip():  # Ensure the string is not empty
+            lines = qa.strip().splitlines()
+
+            # Initialize variables to hold the question and answer
+            question_lines = []
+            answer_lines = []
+            current_section = None
+
+            # Parse each line to separate question and answer
+            for line in lines:
+                if line.startswith("Q:"):
+                    current_section = "question"
+                    question_lines.append(line[2:].strip())
+                elif line.startswith("A:"):
+                    current_section = "answer"
+                    answer_lines.append(line[2:].strip())
+                else:
+                    # Append to the current section (either question or answer)
+                    if current_section == "question":
+                        question_lines.append(line.strip())
+                    elif current_section == "answer":
+                        answer_lines.append(line.strip())
+
+            # Join the lines to form complete question and answer texts
+            question = "\n".join(question_lines).strip()
+            answer = "\n".join(answer_lines).strip()
+
+            if question and answer:
+                questions_answers.append((question, answer))
+
+    return questions_answers
 def validate_bt(tree,node_library):
     if len(tree.find('BehaviorTree'))!=1:
         return False

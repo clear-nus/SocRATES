@@ -2,59 +2,16 @@ from utils.llm_models import models
 from utils.scene_graph import SceneGraph
 from prompts import *
 from utils import utils
+from utils.utils import *
 import xml.etree.ElementTree as ET
 import json
 import tenacity
-def parse_questions_answers(file_path):
-    questions_answers = []
-
-    # Open the file and read its contents
-    with open(file_path, 'r') as file:
-        content = file.read()
-
-    # Split the content by the separator "*****"
-    qa_pairs = content.split("*****")
-
-    # Iterate over each QA pair
-    for qa in qa_pairs:
-        if qa.strip():  # Ensure the string is not empty
-            lines = qa.strip().splitlines()
-
-            # Initialize variables to hold the question and answer
-            question_lines = []
-            answer_lines = []
-            current_section = None
-
-            # Parse each line to separate question and answer
-            for line in lines:
-                if line.startswith("Q:"):
-                    current_section = "question"
-                    question_lines.append(line[2:].strip())
-                elif line.startswith("A:"):
-                    current_section = "answer"
-                    answer_lines.append(line[2:].strip())
-                else:
-                    # Append to the current section (either question or answer)
-                    if current_section == "question":
-                        question_lines.append(line.strip())
-                    elif current_section == "answer":
-                        answer_lines.append(line.strip())
-
-            # Join the lines to form complete question and answer texts
-            question = "\n".join(question_lines).strip()
-            answer = "\n".join(answer_lines).strip()
-
-            if question and answer:
-                questions_answers.append((question, answer))
-
-    return questions_answers
 
 class QueryHandler:
     def __init__(self,config) -> None:
         self.retry_count = config['retry_count']
         self.model = models[config['model']['model_type']](
             model_name = config['model']['model_name'],
-            project_id = config['model']['project_id'],
             debug = config['debug'])
         
         self.debug = config['debug']
@@ -71,29 +28,26 @@ class QueryHandler:
             rough_scenario=rough_scenario,
             location = location_description
         )
-        print("Querying LLM for scenario")
+        lprint("Querying LLM for scenario")
         try:
             #retry N times
             for attempt in tenacity.Retrying(stop=tenacity.stop_after_attempt(self.retry_count),
                                                 wait=tenacity.wait_random_exponential(multiplier=1,max=40)):
                 with attempt:
-                    scq_response = self.model.get_response(messages = scQ_full_prompt)
-                    if self.model.is_response_valid(scq_response,scQ.required_output_keys):
-                        scq_response_json = json.loads(scq_response)
-                        scq_response_json = {k.lower().replace('_','').replace(' ',''): v for k,v in scq_response_json.items()}
+                    scq_response = self.model.get_response(messages = scQ_full_prompt,response_format= StructuredScenarioResponse)
+                    scq_response_structured = self.model.extract_response(scq_response)
+                    if scq_response_structured:
                         #check if 'human_behavior' key is a dict with N keys
-                        if isinstance(scq_response_json['humanbehavior'],dict):
-                            if len(scq_response_json['humanbehavior'].keys())!=scq_response_json['numberofhumans']:
-                                raise ValueError('Invalid response, retrying')
-                        
+                        if len(scq_response_structured.humanbehavior)!=scq_response_structured.numberofhumans:
+                            raise ValueError('Invalid response, retrying')
                     else:
                         if self.debug:
-                            print("Scenario Response invalid")
+                            eprint("Scenario Response invalid")
                         raise ValueError('Invalid response, retrying')
         except tenacity.RetryError:
-            print("Failed to generate scenario")
+            eprint("Failed to generate scenario")
             return None           
-        return scq_response_json
+        return scq_response_structured
     
     def query_traj(self, scene_graph_json,node_types,edge_types,encoded_img,scenario_description):
         '''
@@ -115,7 +69,7 @@ class QueryHandler:
             sc_desc = scenario_description
         )
         scgraph = SceneGraph(scene_graph_json)
-        print("Querying LLM for Trajectories")
+        lprint("Querying LLM for Trajectories")
         valid_trajectories = 0
         all_trajectories_valid = False
         payload = trq_full_prompt.copy()
@@ -125,7 +79,6 @@ class QueryHandler:
                                 <ERRORS>
                                 Retry and Return the answer in the same JSON format.
                 """
-        #try:
         for attempt in tenacity.Retrying(stop=(tenacity.stop_after_attempt(self.retry_count) | tenacity.stop_after_delay(15)),
                                             wait=tenacity.wait_random_exponential(multiplier=1,max=40)):
             #retry from scratch
@@ -134,23 +87,25 @@ class QueryHandler:
             valid_trajectories = False
             with attempt:
                 while retr_traj<3 and not valid_trajectories:
-                    trq_response = self.model.get_response(messages = payload)
-                    if not self.model.is_response_valid(trq_response,trQ.required_output_keys):
+                    trq_response = self.model.get_response(messages = payload,response_format=StructuredTrajResponse)
+                    trq_response_structured = self.model.extract_response(trq_response)
+                    if not trq_response_structured:
                         if self.debug:
-                            print("Inavlid model response")
+                            eprint("Inavlid model response")
                         raise ValueError('Invalid model response')
+                    
                     all_trajectories_valid = True 
-                    trq_response_json = json.loads(trq_response)
-                    trq_response_json = {k.lower().replace('_','').replace(' ',''): v for k,v in trq_response_json.items()}
-                    groupids =  {k.lower().replace('_','').replace(' ',''): v for k,v in trq_response_json['groupids'].items()}
-                    trajectories =  {k.lower().replace('_','').replace(' ',''): v for k,v in trq_response_json['trajectories'].items()}
-                    reasoning = trq_response_json['reasoning']
+                    trajectories =  trq_response_structured.trajectories
+                    robot_traj = trajectories.robot
+                    human_traj = trajectories.humans
+                    all_human_traj = [h.trajectory for h in human_traj]
+                    reasoning = trq_response_structured.reasoning
                     #test trajectory correctness
-                    for k,v in trajectories.items():
+                    for v in [robot_traj] + all_human_traj:
                         traj_valid,errors = scgraph.isvalidtrajectory(v)
                         if not traj_valid: #requery LLM with error message
                             if self.debug:
-                                print("Disconnected Trajectory Output, Retrying")
+                                eprint("Disconnected Trajectory Output, Retrying")
                             all_trajectories_valid = False
                             error_string = ""
                             for err in errors:
@@ -162,7 +117,7 @@ class QueryHandler:
                                     "content":[
                                         {
                                             "type":"text",
-                                            "text": trq_response
+                                            "text": trq_response.json()
                                         }
                                     ]
                                 }    
@@ -182,14 +137,12 @@ class QueryHandler:
                     if all_trajectories_valid:
                         #check if the robot meets any of the humans:
                         
-                        rhmeet = False
-                        rt = trajectories['robot'] 
-                        for k,ht in trajectories.items():
-                            if 'robot' in k:
-                                continue
-                        
-                            if scgraph.areTrajectoriesIntersecting(ht,rt):
-                                rhmeet = True
+                        rhmeet = True
+                        for traj in all_human_traj: #every human should encounter the robot in some node
+                            if not scgraph.areTrajectoriesIntersecting(robot_traj,traj):
+                                rhmeet = False
+                                if self.debug: 
+                                    eprint("Non intersecting trajectories, Retrying..")
                                 break
                         
                         if rhmeet:
@@ -203,7 +156,7 @@ class QueryHandler:
                                         "content":[
                                             {
                                                 "type":"text",
-                                                "text": trq_response
+                                                "text": trq_response.json()
                                             }
                                         ]
                                     }    
@@ -218,11 +171,13 @@ class QueryHandler:
                                             ]
                                         }
                                         )
-        # except tenacity.RetryError:
-        #     print("Failed to generate trajectories")
-        #     return None,None
-        print(reasoning)
-        return groupids,trajectories         
+        if self.debug:
+            lprint("Reasoning: ")
+            print(reasoning)
+        if valid_trajectories:
+            return trajectories         
+        else:
+            return None
         
     def query_bt(self,behavior_description,node_library):
         '''
@@ -238,29 +193,28 @@ class QueryHandler:
                 valid_bt = False
                 with attempt:
                     while retr_bt<3 and not valid_bt:
-                        print(f'Querying for BT')
+                        lprint(f'Querying for BT')
                         try:           
-                            btq_response = self.model.get_response(messages = payload)
+                            btq_response = self.model.get_response(messages = payload,response_format=StructuredBTResponse)
                         except Exception as e:
-                            print(e)
+                            eprint(e)
                             retr_bt+=1
                             raise Exception
-                        if not self.model.is_response_valid(btq_response,btQ.required_output_keys):
+                        btq_response_structured = self.model.extract_response(btq_response)
+                        if not btq_response_structured:
                             raise ValueError('Invalid model response')
-                        btq_response_json = json.loads(btq_response)
-                        btq_response_json = {k.lower().replace('_','').replace(' ',''): v for k,v in btq_response_json.items()}
                         try:
-                            test_xml = ET.fromstring(btq_response_json['tree'])  
-                            print("Recieved Valid XML")
+                            test_xml = ET.fromstring(btq_response_structured.tree)  
+                            lprint("Recieved Valid XML")
                         except:
-                            print("Recieved Invalid XML")
+                            eprint("Recieved Invalid XML")
                             retr_bt+=1
                             payload.append({
                                 "role":"assistant",
                                 "content":[
                                     {
                                         "type":"text",
-                                        "text": btq_response
+                                        "text": btq_response.choices[0].message.to_json()
                                     }
                                 ]
                             })
@@ -276,17 +230,17 @@ class QueryHandler:
                             continue
                         
                         if utils.validate_bt(test_xml,node_library):
-                            print("Recieved Valid BT")
-                            return btq_response_json
+                            lprint("Recieved Valid BT")
+                            return btq_response_structured
                         else:
-                            print("Recieved Invalid BT")
+                            eprint("Recieved Invalid BT")
                             retr_bt+=1
                             payload.append({
                                 "role":"assistant",
                                 "content":[
                                     {
                                         "type":"text",
-                                        "text": btq_response
+                                        "text": btq_response.choices[0].message.to_json()
                                     }
                                 ]
                             })
@@ -299,8 +253,8 @@ class QueryHandler:
                                     }
                                 ]
                             })    
-        except tenacity.RetryError:
-            print("Failed to generate BTs")
+        except tenacity.RetryError as e:
+            eprint(f"Failed to generate BTs + {e}")
             return None
 
     

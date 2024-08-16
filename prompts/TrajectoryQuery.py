@@ -1,5 +1,6 @@
 from .BasePrompt import BasePrompt
-# This query uses the assistants API instead
+from pydantic import BaseModel,StrictInt
+# This query uses the assistants API instead    
 class TrajectoryQuery(BasePrompt): 
     def __init__(self,ref_img_encoded,ref_scene_graph,qa) -> None:
         '''
@@ -8,7 +9,6 @@ class TrajectoryQuery(BasePrompt):
         '''
         
         super().__init__()
-        self.required_output_keys = ['reasoning','trajectories','groupids']
         self.payload = [
             {"role": "system", 
              "content": [{

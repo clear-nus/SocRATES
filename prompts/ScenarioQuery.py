@@ -1,8 +1,9 @@
 from .BasePrompt import BasePrompt
+from pydantic import BaseModel,PositiveInt
+    
 class ScenarioQuery(BasePrompt):
     def __init__(self) -> None:
         super().__init__()
-        self.required_output_keys = ['scenariodescription','numberofhumans','humanbehavior','expectedrobotbehavior','reasoning']
         self.payload = [
             {
                 "role":"system",

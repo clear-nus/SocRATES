@@ -1,10 +1,12 @@
 from utils.query_handler import QueryHandler
 import os
 from utils import utils
+from utils.utils import *
 import json,yaml,copy
 from utils.scene_graph import SceneGraph
 import pprint
 import tenacity
+
 class ScenarioGenerator:
     '''
         Helper class for generating scenarios.
@@ -61,13 +63,15 @@ class ScenarioGenerator:
             Generates a scenario with hunavsim components using the query handler
         '''
         try:
-            for attempt in tenacity.Retrying(stop=tenacity.stop_after_attempt(3)):
+            for attempt in tenacity.Retrying(stop=tenacity.stop_after_attempt(3),retry_error_callback=lambda x: eprint(x)):
                 with attempt:
+                    ######################## SCENARIO GENERATION #####################
                     if self.config['load_scenario_response']:
                         #LOAD SCENARIO
-                        print('loading saved scenario proposal')
+                        lprint('loading saved scenario proposal')
                         with open(self.config['scenario_file'],'r') as f:
-                            scenario = json.load(f)
+                            scenario_parsed = json.load(f)
+                            
                         scenario_desc = scenario['scenariodescription']
                         behav_desc = scenario['humanbehavior']    
                     else:
@@ -76,17 +80,25 @@ class ScenarioGenerator:
                             scenario = self.get_scenario_desc()
                             if scenario == None:
                                 raise Exception
-                            scenario_desc = scenario['scenariodescription']
-                            behav_desc =  {k.lower().replace('_','').replace(' ',''): v for k,v in scenario['humanbehavior'].items()}
-                            print("GENERATED SCENARIO:")
-                            pprint.pprint(scenario)
+                            
+                            scenario_desc = scenario.scenariodescription
+                            behav_desc =  scenario.humanbehavior
+                            rprint("GENERATED SCENARIO:")
+                            rprint("Scenario Description:")
+                            print(scenario_desc)
+                            rprint("Behavior Description:")
+                            for b in behav_desc:
+                                print(f"{b.name}: {b.behavior}")
+                            if self.debug:
+                                rprint("Reasoning:")
+                                print(scenario.reasoning)
                             
                             continue_choice = False
                             while True:
-                                print("CONTINUE?:(Y/N)")
+                                iprint("CONTINUE?:(Y/N)")
                                 continue_choice = input().lower().strip()
                                 if continue_choice!='y' and continue_choice!='n':
-                                    print("invalid input")
+                                    eprint("invalid input")
                                     continue
                                 else:
                                     if continue_choice=='y':
@@ -95,15 +107,16 @@ class ScenarioGenerator:
                                         continue_choice = False                           
                                 break
                             if continue_choice:
-                            #reasoning = scenario['reasoning']    
+                                scenario_parsed = scenario.json()
+                                #reasoning = scenario['reasoning']    
                                 with open(self.config['scenario_file'],'w') as f:
-                                    json.dump(scenario,f)
+                                    json.dump(scenario_parsed,f)
                                 break
                             
-                    #LOAD
+                    ######################### TRAJECECTORY GENERATION #####################
                     if self.config['load_trajectory_response']:
                         #LOAD TRAJECTORY
-                        print('loading saved trajectory')
+                        lprint('loading saved trajectory')
                         with open(self.config['trajectory_file'],'r') as f:
                             traj = json.load(f)
                         groupids = traj['groupids']
@@ -112,21 +125,23 @@ class ScenarioGenerator:
                     else:
                         while True:
                             #GENERATE TRAJECTORY
-                            groupids,trajectories = self.get_trajectories(scenario_desc)
-                            if groupids == None or trajectories == None:
+                            trajectories = self.get_trajectories(scenario_desc)
+                            if trajectories == None:
                                 raise Exception
                             
-                            print("GENERATED TRAJECTORIES:")
-                            print(trajectories)
-                            print("GROUP IDs:")
-                            print(groupids)
+                            rprint("GENERATED TRAJECTORIES:")
+                            rprint(f"Robot Trajectory: ")
+                            print(trajectories.robot)
+                            rprint(f"Human trajectories: ")
+                            for t in trajectories.humans:
+                                print(f"{t.name}(groupid: {t.groupid}): {t.trajectory}")
                             
                             continue_choice = False
                             while True:
-                                print("CONTINUE?:(Y/N)")
+                                iprint("CONTINUE?:(Y/N)")
                                 continue_choice = input().lower().strip()
                                 if continue_choice!='y' and continue_choice!='n':
-                                    print("invalid input")
+                                    eprint("invalid input")
                                     continue
                                 else:
                                     if continue_choice=='y':
@@ -136,67 +151,59 @@ class ScenarioGenerator:
                                     break
                                         
                             if continue_choice:
-                                #reasoning = scenario['reasoning']    
+                                trajectories_parsed = {}
+                                groupids = {}
+                                for traj in trajectories.humans:
+                                    trajectories_parsed[traj.name.lower().replace(' ','')] = traj.trajectory
+                                    groupids[traj.name.lower().replace(' ','')] = traj.groupid 
+                                trajectories_parsed['robot'] = trajectories.robot
                                 with open(self.config['trajectory_file'],'w') as f:
                                     json.dump({
                                         'groupids':groupids,
-                                        'trajectories':trajectories
+                                        'trajectories':trajectories_parsed
                                         },f)
                                 break
                     
+                    ######################## BT GENERATION #####################
                     if self.config['load_bt_response']:
                         #LOAD BT
-                        print('loading saved behaviors')
+                        lprint('loading saved behaviors')
                         with open(self.config['bt_file'],'r') as f:
-                            behavior_trees = json.load(f)
+                            behavior_trees_parsed = json.load(f)
                     else:
                         while True:
                             #GENERATE BT
-                            print("Generating Behavior Trees")
-                            behavior_trees = {}
-                            for human,behav in behav_desc.items():
-                                print(f"Generating Tree for {human}...")
+                            lprint("Generating Behavior Trees")
+                            behavior_trees_parsed = {}
+                            for behav in behav_desc:
+                                lprint(f"Generating Tree for {behav.name}...")
                                 behavior_response =  self.qh.query_bt(
-                                    behavior_description=behav,
+                                    behavior_description=behav.behavior,
                                     node_library=self.node_library
                                 )
                                 if behavior_response == None:
                                     if self.debug:
                                         raise Exception
-                                behavior_trees[human] = behavior_response['tree']
-                                print(f"Generated Behavior Tree for {human}")
-                                
-                                #continue_choice = False
-                                # while True:
-                                #     print("CONTINUE?:(Y/N)")
-                                #     continue_choice = input().lower().strip()
-                                #     if continue_choice!='y' and continue_choice!='n':
-                                #         print("invalid input")
-                                #         continue
-                                #     else:
-                                #         if continue_choice=='y':
-                                #             continue_choice = True
-                                #         else:
-                                #             continue_choice = False                           
-                                #         break
-                                
+                                behavior_trees_parsed[behav.name.lower()] = behavior_response.tree
+                                rprint(f"Generated Behavior Tree for {behav.name}")
                             with open(self.config['bt_file'],'w') as f:
-                                json.dump(behavior_trees,f)
+                                json.dump(behavior_trees_parsed,f)
                             break
                     
                     #save generated scenario
                     #if not self.config['load_scenario_response'] and not self.config['load_trajectory_response'] and not self.config['load_bt_response']:
                     with open(os.path.join(self.config['paths']['save_dir'],self.config['experiment_name']+'_'+'response_traj.json'),'w') as f:
                         json.dump({
-                            'scenario':scenario,
+                            'scenario':scenario_parsed,
                             'groupids':groupids,
-                            'trajectories':trajectories,
-                            'behavior_trees':behavior_trees                      
+                            'trajectories':trajectories_parsed,
+                            'behavior_trees':behavior_trees_parsed
                             },f)
-        except tenacity.RetryError:
-            print("Unable to generate scenario, please rerun script")
+        except tenacity.RetryError as error:
+            eprint(f"Unable to generate scenario, please rerun script: {error}")
             exit()
-        return scenario, groupids, trajectories, behavior_trees
+            
+        return scenario_parsed, groupids, trajectories_parsed, behavior_trees_parsed
 
     def instantiate_simulator(self,file_paths,groupids,trajectories,behaviors_trees):
         '''

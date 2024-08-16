@@ -1,8 +1,12 @@
+from pydantic import BaseModel
+class StructuredBTResponse(BaseModel):
+    reasoning: str
+    tree: str
+    
 from .BasePrompt import BasePrompt
 class BTQuery(BasePrompt):
     def __init__(self) -> None:
         super().__init__()
-        self.required_output_keys = ['reasoning','tree']
         self.payload = [
         {"role": "system", "content": [{
          "type":"text",

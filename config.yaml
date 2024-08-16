@@ -6,12 +6,12 @@ hunav_sim:
 
 model:
  model_type: "gpt"  # "gemini-1.0-pro-vision"
- model_name: "gpt-4o"
- project_id: #'proj_dPCVyup5EeuWcqsXH3aCE0IW'
+ model_name: "gpt-4o-2024-08-06"
 
 num_scenario_proposals: 5
 
 retry_count: 3
+debug: true
 
 node_library:
   root: ['main_tree_to_execute']
