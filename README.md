@@ -50,3 +50,5 @@ source install/setup.bash
 - Also note that we throttle the movements of the humans in order to increase the likelihood of the generated scenario to occur in the simulation (for example, we make the human wait at a previous waypoint if the robot has not yet reached the point where the human and the robot must meet for the scenario. )
 3. The humans and the robot in our framework can communicate through gestures. Run the following script to observe when the robot/human make a gesture: ```ros2 run hunav_gazebo_wrapper gesture_listener.py```
 
+
+- You can finetune the scenario parameters by modifying the saved files in the ```responses``` directory and setting the ```load``` parameters (like ```load_scenario_response```) to true and then running ```python main.py```. This will not regenerate the scenario, but update the gazebo simulation. 
