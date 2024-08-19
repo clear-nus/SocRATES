@@ -7,6 +7,9 @@ if __name__ == '__main__':
     file_paths = OmegaConf.merge(config['hunav_sim'],inputs['paths'])
     full_conf = OmegaConf.merge(config,inputs)
     
+    print("****************** Social Navigation Scenario Generator***********************")
+    
+    
     sg = ScenarioGenerator(full_conf)    
     scenario, groupids, trajectories, interaction_points, behavior_trees = sg.generate_scenario()
     sg.instantiate_simulator(

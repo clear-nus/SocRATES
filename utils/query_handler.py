@@ -209,9 +209,11 @@ class QueryHandler:
                             raise ValueError('Invalid model response')
                         try:
                             test_xml = ET.fromstring(btq_response_structured.tree)  
-                            lprint("Recieved Valid XML")
+                            if self.debug:
+                                lprint("Recieved Valid XML")
                         except:
-                            eprint("Recieved Invalid XML")
+                            if self.debug:
+                                eprint("Recieved Invalid XML")
                             retr_bt+=1
                             payload.append({
                                 "role":"assistant",
