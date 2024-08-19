@@ -64,6 +64,7 @@ class ScenarioGenerator:
         '''
         try:
             for attempt in tenacity.Retrying(stop=tenacity.stop_after_attempt(3),retry_error_callback=lambda x: eprint(x)):
+                #for _ in range(4):
                 with attempt:
                     ######################## SCENARIO GENERATION #####################
                     if self.config['load_scenario_response']:
@@ -72,8 +73,8 @@ class ScenarioGenerator:
                         with open(self.config['scenario_file'],'r') as f:
                             scenario_parsed = json.load(f)
                             
-                        scenario_desc = scenario['scenariodescription']
-                        behav_desc = scenario['humanbehavior']    
+                        scenario_desc = scenario_parsed['scenariodescription']
+                        behaviors_parsed = scenario_parsed['humanbehavior']    
                     else:
                         #GENERATE SCENARIO
                         while True:
@@ -83,12 +84,14 @@ class ScenarioGenerator:
                             
                             scenario_desc = scenario.scenariodescription
                             behav_desc =  scenario.humanbehavior
+                            behaviors_parsed = {}
                             rprint("GENERATED SCENARIO:")
                             rprint("Scenario Description:")
                             print(scenario_desc)
                             rprint("Behavior Description:")
                             for b in behav_desc:
                                 print(f"{b.name}: {b.behavior}")
+                                behaviors_parsed[b.name.lower().replace(' ','')] = b.behavior
                             if self.debug:
                                 rprint("Reasoning:")
                                 print(scenario.reasoning)
@@ -110,7 +113,8 @@ class ScenarioGenerator:
                                 scenario_parsed = scenario.json()
                                 #reasoning = scenario['reasoning']    
                                 with open(self.config['scenario_file'],'w') as f:
-                                    json.dump(scenario_parsed,f)
+                                    json.dump({'scenariodescription':scenario.scenariodescription,
+                                               'humanbehavior':behaviors_parsed},f)
                                 break
                             
                     ######################### TRAJECECTORY GENERATION #####################
@@ -120,13 +124,14 @@ class ScenarioGenerator:
                         with open(self.config['trajectory_file'],'r') as f:
                             traj = json.load(f)
                         groupids = traj['groupids']
-                        trajectories = traj['trajectories']
-                        
+                        trajectories_parsed = traj['trajectories']
+                        interaction_points_parsed = traj['interaction_points']
                     else:
                         while True:
                             #GENERATE TRAJECTORY
                             trajectories = self.get_trajectories(scenario_desc)
                             if trajectories == None:
+                                eprint("Invalid Trajectories, Retrying..")
                                 raise Exception
                             
                             rprint("GENERATED TRAJECTORIES:")
@@ -134,7 +139,7 @@ class ScenarioGenerator:
                             print(trajectories.robot)
                             rprint(f"Human trajectories: ")
                             for t in trajectories.humans:
-                                print(f"{t.name}(groupid: {t.groupid}): {t.trajectory}")
+                                print(f"{t.name}(groupid: {t.groupid}): {t.trajectory}, interaction_point:{t.interaction_point}")
                             
                             continue_choice = False
                             while True:
@@ -152,15 +157,19 @@ class ScenarioGenerator:
                                         
                             if continue_choice:
                                 trajectories_parsed = {}
+                                interaction_points_parsed = {}
                                 groupids = {}
                                 for traj in trajectories.humans:
                                     trajectories_parsed[traj.name.lower().replace(' ','')] = traj.trajectory
                                     groupids[traj.name.lower().replace(' ','')] = traj.groupid 
+                                    interaction_points_parsed[traj.name.lower().replace(' ','')] = traj.interaction_point
+                                
                                 trajectories_parsed['robot'] = trajectories.robot
                                 with open(self.config['trajectory_file'],'w') as f:
                                     json.dump({
                                         'groupids':groupids,
-                                        'trajectories':trajectories_parsed
+                                        'trajectories':trajectories_parsed,
+                                        'interaction_points':interaction_points_parsed
                                         },f)
                                 break
                     
@@ -175,17 +184,17 @@ class ScenarioGenerator:
                             #GENERATE BT
                             lprint("Generating Behavior Trees")
                             behavior_trees_parsed = {}
-                            for behav in behav_desc:
-                                lprint(f"Generating Tree for {behav.name}...")
+                            for name, behav in behaviors_parsed.items():
+                                lprint(f"Generating Tree for {name}...")
                                 behavior_response =  self.qh.query_bt(
-                                    behavior_description=behav.behavior,
+                                    behavior_description=behav,
                                     node_library=self.node_library
                                 )
                                 if behavior_response == None:
                                     if self.debug:
                                         raise Exception
-                                behavior_trees_parsed[behav.name.lower()] = behavior_response.tree
-                                rprint(f"Generated Behavior Tree for {behav.name}")
+                                behavior_trees_parsed[name] = behavior_response.tree
+                                rprint(f"Generated Behavior Tree for {name}")
                             with open(self.config['bt_file'],'w') as f:
                                 json.dump(behavior_trees_parsed,f)
                             break
@@ -197,13 +206,14 @@ class ScenarioGenerator:
                             'scenario':scenario_parsed,
                             'groupids':groupids,
                             'trajectories':trajectories_parsed,
+                            'interaction_points':interaction_points_parsed,
                             'behavior_trees':behavior_trees_parsed
                             },f)
         except tenacity.RetryError as error:
             eprint(f"Unable to generate scenario, please rerun script: {error}")
             exit()
             
-        return scenario_parsed, groupids, trajectories_parsed, behavior_trees_parsed
+        return scenario_parsed, groupids, trajectories_parsed, interaction_points_parsed, behavior_trees_parsed
 
     def instantiate_simulator(self,file_paths,groupids,trajectories,behaviors_trees):
         '''
@@ -234,34 +244,37 @@ class ScenarioGenerator:
                 world_trajectories[k].append(self.pix2world(self.scgraph.graph.nodes[l]['pos']))
         
         #gather all peds trajectories
-        for i in range(len(trajectories.keys())-1):
-            agents_yaml['hunav_loader']['ros__parameters']['agents'].append(f'agent{i}')
-            agents[f'agent{i}'] = copy.deepcopy(blank_human)
-            agents[f'agent{i}']['id'] = i
-            agents[f'agent{i}']['behavior'] = 7+i
-            agents[f'agent{i}']['group_id'] = groupids[f'human{i+1}']
-            for j,g in enumerate(world_trajectories[f'human{i+1}']):
-                if j == 0:
-                    agents[f'agent{i}']['init_pose'] = {
-                        'x':g[0],
-                        'y':g[1],
-                        'z':1.25,
-                        'h':0.0,
-                    }
-                    if len(world_trajectories[f'human{i+1}']) <= 1:
-                        agents[f'agent{i}']['goals'].append(f'g{1}')
-                        agents[f'agent{i}'][f'g{1}'] = {
+        i = 0
+        for name,trajectory in trajectories.items():
+            if name!='robot':
+                agents_yaml['hunav_loader']['ros__parameters']['agents'].append(name)
+                agents[name] = copy.deepcopy(blank_human)
+                agents[name]['id'] = i
+                agents[name]['behavior'] = 7+i
+                agents[name]['group_id'] = groupids[name]
+                for j,g in enumerate(world_trajectories[name]):
+                    if j == 0:
+                        agents[name]['init_pose'] = {
+                            'x':g[0],
+                            'y':g[1],
+                            'z':1.25,
+                            'h':0.0,
+                        }
+                        if len(world_trajectories[name]) <= 1:
+                            agents[name]['goals'].append(f'g{1}')
+                            agents[name][f'g{1}'] = {
+                                'x':g[0],
+                                'y':g[1],
+                                'h':1.25
+                            }
+                    else:
+                        agents[name]['goals'].append(f'g{j}')
+                        agents[name][f'g{j}'] = {
                             'x':g[0],
                             'y':g[1],
                             'h':1.25
                         }
-                else:
-                    agents[f'agent{i}']['goals'].append(f'g{j}')
-                    agents[f'agent{i}'][f'g{j}'] = {
-                        'x':g[0],
-                        'y':g[1],
-                        'h':1.25
-                    }
+                i+=1
         agents_yaml['hunav_loader']['ros__parameters'].update(agents)
         
         #write trajectories in hunav_sim        

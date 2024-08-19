@@ -87,20 +87,26 @@ You must select the trajectories of the humans and the robot to orchestrate this
 2. If a human is not involved in a group, they will have a group id of -1.
 3. If the scenario does not specifically mention a group, then assign -1 to all humans
 4. All humans involved in the scenario must be assigned a group id.
-Format your output in JSON as given below:
+FEnsure that you choose paths for the robot and the human accounting for the types of nodes and edges required for the scenario. 
+Also select where the human and the robot should ideally encounter each other (INTERACTION POINTS) for the scenario to take place.
+Format your output in json as given below:
         {
-            'REASONING': <Explain Scenario Location, Robot and human trajectory choice and group id assignment>,
-            'TRAJECTORIES': {
-                'ROBOT': <...>
-                'HUMAN 1': <...>,
-                'HUMAN 2': <...>,
-                'HUMAN 3': <...>,
-            },
-            'GROUP IDS':{
-                'HUMAN 1': ..,
-                'HUMAN 2': ...,
-                ...
-            }
+            'reasoning': <Explain Scenario Location, Robot and human trajectory choice and group id assignment>,
+            'trajectories': { <Output the trajectories, interaction points and groupids of the humans and the robot as a sequence of scene graph nodes>
+                'robot': <...>,
+                'humans':[
+                    {   'name': ...,
+                        'groupid': ...,
+                        'trajectory':...,
+                        'interaction_point':...
+                    },
+                    {   'name': ...,
+                        'groupid': ...,
+                        'trajectory':...,
+                        'interaction_point':...
+                    }
+                    
+                ]}
 }"""}]}
         )
         full_prompt[-1]["content"][-1]["text"] = full_prompt[-1]["content"][-1]["text"].replace('<SCENARIO DESCRIPTION>',kwargs['sc_desc'])  

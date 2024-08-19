@@ -2,42 +2,39 @@
 Q: Now answer the following question: Is it possible to go from node 86 to node c4 directly?
 Return an answer in JSON format shown below:
 {
-    'ANSWER': True/False,
-    'REASONING': <Reasoning for answer>
+    'answer': True/False,
+    'reasoning': <reasoning for answer>
 }
 A: {
-    'ANSWER': False
-    'REASONING': "" According to the scene graph, c4 is directly connected to ca and f7 only, thus it is not possible to go from 86 to c4 directly""
+    'answer': False
+    'reasoning': "" According to the scene graph, c4 is directly connected to ca and f7 only, thus it is not possible to go from 86 to c4 directly""
    }
 
 *****
 Q: Now answer the following question: If I walk from node 0a to node 81 and take a right turn which node will I reach first?
 Return an answer in JSON format shown below:
 {
-    'Answer': Node ID,
-    'Reasoning': <Reasoning for answer>
+    'answer': Node ID,
+    'reasoning': <reasoning for answer>
 }
-A: {
-    
-'ANSWER': "03",
-
-'REASONING': ""From the image:
-1. 0a is south of 81
-2. The nodes immediately to the east of 81 are 03 and 19
-3. The first node after turning right at 81 when approaching from 0a is 03""
+A: {    
+    'answer': "03",
+    'reasoning': ""From the image:
+    1. 0a is south of 81
+    2. The nodes immediately to the east of 81 are 03 and 19
+    3. The first node after turning right at 81 when approaching from 0a is 03""
 }
 
 *****
 Q: Now answer the following question: If I walk from node ca to node 86, which direction am I walking?
                               Return an answer in JSON format shown below:
 {
-    'Answer': DIRECTION,
-    'Reasoning': <Reasoning for answer>
+    'answer': DIRECTION,
+    'reasoning': <reasoning for answer>
 }
 A: {   
-    'ANSWER': 'NORTH-EAST',
-    'REASONING': ""
-    According to the image: ca is to the bottom left of 86
+    'answer': 'NORTH-EAST',
+    'reasoning': ""According to the image: ca is to the bottom left of 86
     From the scene graph json: ca has position(86,148) and 86 has position(108,137). Assuming up is North, this means that 86 is top and right of ca. 
     Thus, when walking from ca to 86, you will be walking north-east""
 }
@@ -46,12 +43,12 @@ A: {
 Q: Now answer the following question: If I walk from node c0 to node 67, which direction should I turn to reach node 2b?
 Return an answer in JSON format shown below:
 {
-    'Answer': DIRECTION,
-    'Reasoning': <Reasoning for answer>
+    'answer': DIRECTION,
+    'reasoning': <reasoning for answer>
 }
 A: {
-    'Answer': 'SOUTH',
-    'REASONING': ""From the scene graph, 67 is directly connected to a6,86 and ad. 
+    'answer': 'SOUTH',
+    'reasoning': ""From the scene graph, 67 is directly connected to a6,86 and ad. 
     Thus, 2b is not directly reachable from 67. However, from the image and scene graph, ad is connected to 2b. 
     The shortest path to reach 2b from 67 seems to be through ad. Thus to reach 2b from 67, you need to walk straight ahead.
     From the image, 2b is almost directly below 67 and from the scene graph, 2b is at position(140,164) while 67 is at position (139,128)
@@ -69,24 +66,28 @@ following rule:
 2. All the humans of the same group must have the same group id.
 3. All humans involved in the scenario must be assigned a group id.
 Ensure that you choose paths for the robot and the human accounting for the types of nodes and edges required for the scenario. 
-
+Also select where the human and the robot should ideally encounter each other (INTERACTION POINTS) for the scenario to take place.
 Format your output in json as given below:
         {
-            'REASONING': <Explain Scenario Location, Robot and human trajectory choice and group id assignment>,
-            'TRAJECTORIES': {
-                'ROBOT': <...>
-                'HUMAN 1': <...>,
-                'HUMAN 2': <...>,
-                'HUMAN 3': <...>,
-            },
-            'GROUP ID':{
-                'HUMAN 1': ..,
-                'HUMAN 2': ...,
-                ...
-            }
+            'reasoning': <Explain Scenario Location, Robot and human trajectory choice and group id assignment>,
+            'trajectories': { <Output the trajectories, interaction points and groupids of the humans and the robot as a sequence of scene graph nodes>
+                'robot': <...>,
+                'humans':[
+                    {   'name': ...,
+                        'groupid': ...,
+                        'trajectory':...,
+                        'interaction_point':...
+                    },
+                    {   'name': ...,
+                        'groupid': ...,
+                        'trajectory':...,
+                        'interaction_point':...
+                    }
+                    
+                ]}
         }
 A: {
-'REASONING':""
+    'reasoning':""
         ### Scenario Location:
         This scenario requires a long a passageway where the humans and the robot encounter each other.
         Edges of type passageway from the scene graph are: 81-0a, 0a-c0, c4-ca, c4-f7, f7-f2, 1a-ca
@@ -97,34 +98,41 @@ A: {
 
         ### robot's Trajectory:
         1. before encountering humans: 1a-ca
-        2. encounter employees somewhere in the edges ca-c4 and c4-f7
+        2. encounter employees at ca and c4
         3. exit the passageway and go to f2 and df (drops the box here)
         Thus, robot's trajectory: 1a,ca,c4,f7,f2,df
         
         ### Employee 1 Trajectory (moving opposite to the robot):
         1. before encountering robot: f2->f7
-        2. encounter robot somewhere in the edges ca-c4 and c4-f7
+        2. encounter robot at c4
         3. exit the passageway and go to 1a
         Thus, Employee 1 trajectory: f2,f7,c4,ca,1a
 
         ### Employee 2 Trajectory (moving alongside the robot):
-        1. Start at node ca
-        2. encounter robot somewhere in the edges ca-c4 and c4-f7
-        3. exit the passageway and go to f2 and df
+        1. Start at node ca encounter robot at ca
+        2. exit the passageway and go to f2 and df
         Thus, Employee 2 trajectory: ca,c4,f7,f2,df
         
         ### Group IDs:
-        Since the 2 employees in the scenario are not part of any single group, they both have group_ids of -1 (default, no group)."",
+        Since the 2 employees in the scenario are not part of any single group, they both have group_ids of -1 (default, no group).""
 
-'TRAJECTORIES': {
-    'ROBOT': ['1a','ca','c4','f7','f2','df'],
-    'HUMAN 1': ['f2','f7','c4','ca','1a'],
-    'HUMAN 2': ['ca','c4','f7','f2','df']
-},
-'GROUP ID':{
-    'HUMAN 1': -1,
-    'HUMAN 2': -1
-    }
+    'trajectories': {
+        'robot': ['1a','ca','c4','f7','f2','df'],
+        'humans':[
+            {
+                'name':'human 1',
+                'groupid': -1,
+                'trajectory': ['f2','f7','c4','ca','1a'],
+                'interaction_point':'c4'
+            },
+            {
+                'name':'human 2',
+                'groupid': -1,
+                'trajectory': ['ca','c4','f7','f2','df'],
+                'interaction_point':'ca'
+            }
+        ] 
+    },
 }
 
 *****
@@ -136,23 +144,29 @@ You must select the trajectories of the humans and the robot to orchestrate this
 1. All the members of the same group must have the same group id.
 2. If a human is not involved in a group, they will have a group id of -1.
 3. All humans involved in the scenario must be assigned a group id.
+Ensure that you choose paths for the robot and the human accounting for the types of nodes and edges required for the scenario. 
+Also select where the human and the robot should ideally encounter each other (INTERACTION POINTS) for the scenario to take place.
 Format your output in json as given below:
         {
-           'REASONING': <Explain Scenario Location, Robot and human trajectory choice and group id assignment>,
-             'TRAJECTORIES': {
-                'ROBOT': <...>
-                'HUMAN 1': <...>,
-                'HUMAN 2': <...>,
-                'HUMAN 3': <...>,
-            },
-            'GROUP IDS':{
-                'HUMAN 1': ..,
-                'HUMAN 2': ...,
-                ...
-            }
-}
+            'reasoning': <Explain Scenario Location, Robot and human trajectory choice and group id assignment>,
+            'trajectories': { <Output the trajectories, interaction points and groupids of the humans and the robot as a sequence of scene graph nodes>
+                'robot': <...>,
+                'humans':[
+                    {   'name': ...,
+                        'groupid': ...,
+                        'trajectory':...,
+                        'interaction_point':...
+                    },
+                    {   'name': ...,
+                        'groupid': ...,
+                        'trajectory':...,
+                        'interaction_point':...
+                    }
+                    
+                ]}
+        }
 A: {
-'REASONING':""
+'reasoning':""
 
         ### Scenario Location:
         To create this scenario, we need to identify a suitable intersection.
@@ -173,22 +187,30 @@ A: {
         Thus, robot's trajectory: 0a,c0,67,ad,2b
         
         ### Employee 1 Trajectory:
-        1. standing at 67
+        1. standing at 67, encounter robot at 67
         Thus, Employee 1 trajectory: 67
 
         ### Employee 2 Trajectory:
-        1. standing at 67
+        1. standing at 67, encounter robot at 67
         Thus, Employee 2 trajectory: 67
 
         Since the 2 employees in the scenario are part of a single group, they both have group_ids of 1."",
 
-'TRAJECTORIES': {
-    'ROBOT': ['0a','c0','67','ad','2b'],
-    'HUMAN 1': ['67'],
-    'HUMAN 2': ['67']
-},
-'GROUP ID':{
-    'HUMAN 1': 1,
-    'HUMAN 2': 1
+'trajectories': {
+        'robot':  ['0a','c0','67','ad','2b'],
+        'humans':[
+            {
+                'name':'human 1',
+                'groupid': 1,
+                'trajectory': ['67'],
+                'interaction_point':'67'
+            },
+            {
+                'name':'human 2',
+                'groupid': 1,
+                'trajectory': ['67'],
+                'interaction_point':'67'
+            }
+        ] 
     }
-}
+    }

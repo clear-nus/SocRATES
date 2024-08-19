@@ -8,10 +8,10 @@ if __name__ == '__main__':
     full_conf = OmegaConf.merge(config,inputs)
     
     sg = ScenarioGenerator(full_conf)    
-    scenario, groupids, trajectories, behavior_trees = sg.generate_scenario()
+    scenario, groupids, trajectories, interaction_points, behavior_trees = sg.generate_scenario()
     sg.instantiate_simulator(
         file_paths= file_paths,
         groupids= groupids,
         trajectories= trajectories,
-        behaviors_trees= behavior_trees
+        behaviors_trees= behavior_trees,
     )

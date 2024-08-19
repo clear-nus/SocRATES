@@ -86,7 +86,7 @@ class QueryHandler:
             retr_traj = 0
             valid_trajectories = False
             with attempt:
-                while retr_traj<3 and not valid_trajectories:
+                while retr_traj<5 and not valid_trajectories:
                     trq_response = self.model.get_response(messages = payload,response_format=StructuredTrajResponse)
                     trq_response_structured = self.model.extract_response(trq_response)
                     if not trq_response_structured:
@@ -104,45 +104,49 @@ class QueryHandler:
                     for v in [robot_traj] + all_human_traj:
                         traj_valid,errors = scgraph.isvalidtrajectory(v)
                         if not traj_valid: #requery LLM with error message
-                            if self.debug:
-                                eprint("Disconnected Trajectory Output, Retrying")
                             all_trajectories_valid = False
                             error_string = ""
                             for err in errors:
-                                error_string+=f"There is no edge connecting {err[0]} and {err[1]}!"
-                            
-                            payload.append(
-                                {
-                                    "role":"assistant",
-                                    "content":[
-                                        {
-                                            "type":"text",
-                                            "text": trq_response.json()
-                                        }
-                                    ]
-                                }    
-                                )
-                            payload.append({
-                                    "role": "user", 
-                                    "content": [
-                                        {
-                                            "type":"text",
-                                            "text": reply.replace('<ERRORS>',error_string)
-                                        }
-                                            ]
-                                        }
-                                        )
-                            retr_traj+=1
-                            break
-                    if all_trajectories_valid:
-                        #check if the robot meets any of the humans:
+                                error_string+=f"There is no edge connecting {err[0]} and {err[1]}!\n"
+
+                    if not all_trajectories_valid:                        
+                        if self.debug:
+                                eprint("Disconnected Trajectory Output, Retrying")    
+                        payload.append(
+                            {
+                                "role":"assistant",
+                                "content":[
+                                    {
+                                        "type":"text",
+                                        "text": trq_response.json()
+                                    }
+                                ]
+                            }    
+                            )
+                        payload.append({
+                                "role": "user", 
+                                "content": [
+                                    {
+                                        "type":"text",
+                                        "text": reply.replace('<ERRORS>',error_string)
+                                    }
+                                        ]
+                                    }
+                                    )
+                        retr_traj+=1
                         
+                    else:
+                        #check if the robot meets any of the humans:
                         rhmeet = True
-                        for traj in all_human_traj: #every human should encounter the robot in some node
-                            if not scgraph.areTrajectoriesIntersecting(robot_traj,traj):
+                        # for traj in all_human_traj: #every human should encounter the robot in some node
+                        #     if not scgraph.areTrajectoriesIntersecting(robot_traj,traj):
+                        #         rhmeet = False
+                        #         if self.debug: 
+                        #             eprint("Non intersecting trajectories, Retrying..")
+                        #         break
+                        for human in human_traj:
+                            if not((human.interaction_point in human.trajectory) and (human.interaction_point in robot_traj)):
                                 rhmeet = False
-                                if self.debug: 
-                                    eprint("Non intersecting trajectories, Retrying..")
                                 break
                         
                         if rhmeet:
@@ -166,15 +170,15 @@ class QueryHandler:
                                     "content": [
                                         {
                                             "type":"text",
-                                            "text": reply.replace('<ERRORS>',"The Paths of the human and the robot don't intersect, thus they don't meet in this scenario, which is wrong.")
+                                            "text": reply.replace('<ERRORS>',"The Paths of the human and the robot don't intersect or the interaction point is set incorrectly.")
                                         }
                                             ]
                                         }
                                         )
-        if self.debug:
-            lprint("Reasoning: ")
-            print(reasoning)
         if valid_trajectories:
+            if self.debug:
+                lprint("Reasoning: ")
+                print(reasoning)
             return trajectories         
         else:
             return None

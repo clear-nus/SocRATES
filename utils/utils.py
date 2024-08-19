@@ -20,6 +20,7 @@ class HumanTraj(BaseModel):
     name: str
     groupid: StrictInt
     trajectory: list[str]
+    interaction_point: str
     
 class Trajectories(BaseModel):
     robot: list[str]
