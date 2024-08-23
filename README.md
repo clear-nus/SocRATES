@@ -12,7 +12,8 @@ SoNAS consists of 3 submodules:
     - For the 2 ROS2 packages, clone the submodules into your catkin workspace and build with the ROS2 ```colcon``` tool
 ## Generating your own scenarios
 To generate scenarios in your own map, first annotate the map by following the instructions, then generate scenarios and then run the gazebo simulation. 
-### Map Annotation
+### Map Annotation (requires map.yaml, map.png and .world files)
+- We have provided sample maps in the ```locations``` folder. Jump directly to Scenario Generation to skip this step. 
 1. Update ```annotator/config.yaml``` with the scene graph schema for your map, and the paths to the image files. You can also tune the ```zoom_in``` parameter to comfortably annotate the image and the ```zoom_out``` parameter to save the annotated image with the corresponding zoom. The schema already filled in is for a warehouse map. Use easy to understand/self-explanatory edge and node names. For example, simple-edge(node) for un-noteworthy edges(nodes) and specific names (like blind corner/intersection etc.) for specific locations in the map.
 2. Annotate your map image with the annotator tool: 
     - ```cd annotator```
