@@ -15,7 +15,6 @@ import pprint
 import xml.etree.ElementTree as ET
 from termcolor import cprint
 from pydantic import BaseModel,StrictInt,PositiveInt
-
 class HumanTraj(BaseModel):
     name: str
     groupid: StrictInt
@@ -93,37 +92,51 @@ def parse_questions_answers(file_path):
                 questions_answers.append((question, answer))
 
     return questions_answers
-def validate_bt(tree,node_library):
+def validate_bt(tree,node_library,debug=False):
     if len(tree.find('BehaviorTree'))!=1:
+        if debug:
+            eprint("Behavior Tree node has multiple children")
         return False
     
     for elem in tree.iter():
         if elem.tag not in node_library:
-            print(f'{elem.tag} not in node_library')
+            if debug:
+                eprint(f'{elem.tag} not in node_library')
             return False
         
         if elem.tag == 'SubTree':
             if elem.attrib!={'ID': 'RegularNavTree', 'id': 'agentid', 'dt': 'timestep'}:
+                if debug:
+                    eprint("RegularNav problem")
                 return False
             #check if RegularNav is included for SubTree
             included_files = tree.findall('.//include')
             if len(included_files)!=1:
+                if debug:
+                    eprint("RegularNav problem")
                 return False         
             if included_files[0].attrib != {'path': 'BTRegularNav.xml'}:
+                if debug:
+                    eprint("RegularNav problem")
                 return False
             continue
          
         #check for incorrect nodes
         for k,v in elem.attrib.items():
             if k not in node_library[elem.tag]:
-                print(f'{k} not in node_library[{elem.tag}]')
+                if debug:
+                    eprint(f'{k} not in node_library[{elem.tag}]')
                 return False
             
         #check if all attributes are correct
         if len(node_library[elem.tag])!=len(elem.attrib.keys()):
+            if debug:
+                eprint(f"{node_library[elem.tag]} attribute issue: {elem.attrib.keys()}")
             return False
         for v in node_library[elem.tag]:
             if v not in list(elem.attrib.keys()):
+                if debug:
+                    eprint(f"{node_library[elem.tag]} attribute issue: {elem.attrib.keys()}")
                 return False
     return True
 

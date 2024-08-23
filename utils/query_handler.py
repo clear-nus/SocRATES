@@ -235,7 +235,7 @@ class QueryHandler:
                             })
                             continue
                         
-                        if utils.validate_bt(test_xml,node_library):
+                        if utils.validate_bt(test_xml,node_library,self.debug):
                             lprint("Recieved Valid BT")
                             return btq_response_structured
                         else:
