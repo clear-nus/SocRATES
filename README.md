@@ -29,7 +29,6 @@ You can generate a scenario in 3 steps:
     - ```context```: Define the social context in which the robot is performing its task
     - ``` robot task ```: What is the robot's task when navigating the scenario? 
     - ```rough scenario```: Specify if you want to generate a specific scenario. More specific and well defined scenarios tend to work better (Default ```None```).
--   You can also writeup a full scenario in the handcrafted scenario and set ```use_handcrafted_scenario: true```
 - If you want to reuse parts of a previously generated scenario like the scenario description, trajectory or the behaviors, set the corresponding variable ```load__component_to_load: true```. For example, to regenerate only the human behaviors and keep the scenario and trajectories previously generated, use: 
 ```
 load_scenario_response: true 
@@ -37,7 +36,7 @@ load_trajectory_response: true
 load_bt_response: false
 ```
 
-2. Run the scenario generator with ``` python main.py ```. You will be asked for confirmations for the generated scenarios and trajectories. The scenario generator could fail (LLMs are imperfect.), the script will try to retry scenario generation multiple times, please rerun if there is a full failure. If the trajectories or behaviors fail to generate, the scenarios maybe regenerated. 
+2. Run the scenario generator with ``` python main.py ```. You will be asked for confirmations for the generated scenarios and trajectories. The scenario generator could fail (LLMs are imperfect.), the script will try to retry scenario generation multiple times, please rerun if there is a full failure. If the trajectories or behaviors fail to generate, the scenarios maybe regenerated. You can refer to the scene graph image to inspect the proposed paths for the human and the robot.
 
 ### Launching the Scenario in Gazebo
 - In a separate terminal, source the environment with ROS2 installed. 

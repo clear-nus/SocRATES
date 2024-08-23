@@ -131,9 +131,21 @@ class ScenarioGenerator:
                             #GENERATE TRAJECTORY
                             trajectories = self.get_trajectories(scenario_desc)
                             if trajectories == None:
-                                eprint("Invalid Trajectories, Retrying..")
-                                raise Exception
-                            
+                                eprint("Invalid Trajectories generated:")
+                                retry_choice=None
+                                while True:
+                                    iprint("Retry Trajectory Regeneration (1) or Regenerate Scenario(2)?:")
+                                    retry_choice = input().lower().strip()
+                                    if retry_choice!='1' and retry_choice!='2':
+                                        eprint("invalid input, please press (1) or (2)")
+                                        continue
+                                    else:
+                                        break
+                                if retry_choice=='2':
+                                    raise Exception
+                                else:
+                                    continue
+                                
                             rprint("GENERATED TRAJECTORIES:")
                             rprint(f"Robot Trajectory: ")
                             print(trajectories.robot)
@@ -172,7 +184,6 @@ class ScenarioGenerator:
                                         'interaction_points':interaction_points_parsed
                                         },f)
                                 break
-                    
                     ######################## BT GENERATION #####################
                     if self.config['load_bt_response']:
                         #LOAD BT

@@ -112,6 +112,7 @@ class QueryHandler:
                     if not all_trajectories_valid:                        
                         if self.debug:
                                 eprint("Disconnected Trajectory Output, Retrying")    
+                                eprint([robot_traj] + all_human_traj)
                         payload.append(
                             {
                                 "role":"assistant",

@@ -214,11 +214,11 @@ if __name__ == "__main__":
     fine_root = tk.Tk()
     
     msg = f"""
-          -------------------CONTROLS--------------------------------------
-          DOUBLE CLICK TO ADD A NODE (THEN SELECT THE NODE TYPE)
-          CLICK AND DRAG BETWEEN 2 NODES TO ADD AN EDGE.
-          PRESS RETURN KEY TO SAVE ALL THE IMAGES
-          ----ADD NODES FOR THE FOLLOWING REGIONS IN YOUR MAP--------------""" +'\n'+ '\n'.join([f"{i+1}:{n}" for i,n in enumerate(config['node_types'])]) + '\n'+"""-- CONNECT THE NODES WITH EDGES OF THE FOLLOWING TYPES----------"""+ '\n'+'\n'.join([f"{i+1}:{n}" for i,n in enumerate(config['edge_types'])]) + '\n'+"""--------------------------------------------------------------------"""
+-------------------CONTROLS--------------------------------------
+    DOUBLE CLICK TO ADD A NODE (THEN SELECT THE NODE TYPE)
+        CLICK AND DRAG BETWEEN 2 NODES TO ADD AN EDGE.
+                Alt+S TO SAVE ALL THE IMAGES
+---------ADD NODES FOR THE FOLLOWING REGIONS IN YOUR MAP---------""" +'\n'+ '\n'.join([f"{i+1}:{n}" for i,n in enumerate(config['node_types'])]) + '\n'+"""-- CONNECT THE NODES WITH EDGES OF THE FOLLOWING TYPES----------"""+ '\n'+'\n'.join([f"{i+1}:{n}" for i,n in enumerate(config['edge_types'])]) + '\n'+"""--------------------------------------------------------------------"""
     print(msg)
     app = SceneGraphBuilder(root, float(config['zoom_in']), float(config['zoom_out']),config['img'],config['scg'],config['out'],config['node_types'],config['edge_types'])  # Replace with your own image path
     root.mainloop()
