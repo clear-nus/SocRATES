@@ -87,8 +87,9 @@ You must select the trajectories of the humans and the robot to orchestrate this
 2. If a human is not involved in a group, they will have a group id of -1.
 3. If the scenario does not specifically mention a group, then assign -1 to all humans
 4. All humans involved in the scenario must be assigned a group id.
-FEnsure that you choose paths for the robot and the human accounting for the types of nodes and edges required for the scenario. 
+Ensure that you choose paths for the robot and the human accounting for the types of nodes and edges required for the scenario. 
 Also select where the human and the robot should ideally encounter each other (INTERACTION POINTS) for the scenario to take place.
+Unless a human is supposed to be stationary, ensure that the human's trajectory has at least one node after the interaction node.
 Format your output in json as given below:
         {
             'reasoning': <Explain Scenario Location, Robot and human trajectory choice and group id assignment>,

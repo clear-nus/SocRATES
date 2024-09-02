@@ -43,53 +43,75 @@ The tutorial below will explain how to design behavior trees in XML:
             ....
         </Sequence>
     </Fallback>
-JSONe">
-        <Sequence name="RegNav">
-            <SetBlackboard output_key="agentid" value="{id}" /> <!--Main tree creates a blackboard entry 'agentid' with the value retrieved from the blackboard entry "id" -->
-            <SetBlackboard output_key="timestep" value="{dt}" /> <!--Main tree creates a blackboard entry 'timestep' with the value retrieved from the blackboard entry "id" -->
-            <SubTree ID="RegularNavTree" id="agentid" dt="timestep" /> <!-- The "id" and "dt" ports of the subtree are mapped to the agentid and timestep ports of the main tree blackboard --> 
-        </Sequence>             
-    </BehaviorTree>
-
+    
 The following Action Nodes, Condition nodes and Decorators are available to use and can be composed into behavior trees to achieve the user's request. 
+Note that you can only fill in values for node attributes with "??".
 
     - BT Conditions
-        - IsRobotVisible(agent_id ,distance) : returns Success when the robot is within the input distance of the agent and visible(in line of sight) to the agent. Distance is in meters. 
-        - IsRobotNearby(agent_id, distance) : returns Success when the robot is near the agent within the input distance. Distance is in meters.
-        - IsGoalReached(agent_id) : returns Success if the agent has reached their current goal
-        - TimeExpiredCondition(seconds, ts, only_once): Creates a timer and returns SUCCESS if the input duration in seconds has expired since ticking this node the first time (and FAILURE otherwise). If only_once = False, then the timer repeats (use this for periodically occuring behaviors).
-        - RobotSays(agent_id, message) : Returns Success if the robot is currently performing a gesture corresponding to the message(int) passed to the functions. Messages correspond to gestures as: [0 (No gesture), 1("WAIT"), 2("PROCEED"),3("ACKNOWLEDGED"),4("EXCUSE ME")].
-        - RobotMoved(agent_id): Returns success if the robot has non zero velocity.
-        - IsRobotBlocking(agent_id, distance): Returns Success if the robot is in direct line of sight of the agent and within the input distance. Distance is in meters.
-    - Note: In the simulator, for distance, 0.5 is considered very close, 1.0 is considered very closed, 2.0 is considered moderate distance and 5.0 is considered far
-    - BT Actions:
-        - UpdateGoal(agent_id) : Updates the goal of the agent to the next goal in the agent’s goal queue
-        - MakeGesture(agent_id,message): Makes the agent perform a gesture. Choices are: [0 (No gesture), 1("WAIT"), 2("PROCEED"), 3("EXCUSE ME")]. Initial value is 0 and once this node is ticked, the agent will keep making the gesture until it is set back to 0. 
-        - RegularNav(agent_id,time_step) : Makes the agent perform standard social-force-model based motion planning, where the robot is treated as a normal obstacle.
-        - LookAtRobot(agent_id) : Makes the agent look in the direction of the robot
-        - FollowRobot(agent_id,time_step): Makes the agent follow the robot
-        - AvoidRobot(agent_id,time_step): Makes the agent overly avoid the robot.
-        - GiveWaytoRobot(agent_id,time_step): Makes the agent give way to the robot.
-        - BlockRobot(agent_id,time_step): Makes the agent move in front of the robot and block it
+        - <IsRobotVisible agent_id="{id}" distance="??" /> : True if robot is in line of sight within ?? metres. 
+        - <IsRobotNearby agent_id="{id}" distance="??" /> : True if robot is within ?? metres of the agent (regardless of line of sight).
+        - <TimeExpiredCondition seconds="??" ts="{dt}", only_once="True"): (Use with Inverter) True if ?? seconds has passed since the first time this node was ticked. Use this to make the agent do something for a fixed amount of time (for example block/follow/lookatrobot).
+        - <RobotSays agent_id="{id}" message="??"/> :  True if robot is saying ??. The possible inputs and their meanings are: 0 (No gesture), 1("WAIT"), 2("PROCEED"),3("ACKNOWLEDGED"),4("EXCUSE ME").
+        - <RobotMoved agent_id="{id}"/>: True if the robot is currently moving. 
+        - <IsRobotBlocking agent_id="{id}" distance="??"/>: True if the robot is blocking the agent's path and within ?? meters.
     
+    - Note: In the simulator, for distance, 0.5 is considered very close, 1.0 is considered close, 2.0 is considered moderate distance and 5.0 is considered far
+    - BT Actions:
+        - <MakeGesture agent_id="{id}" message="??"/>: Makes the agent perform a gesture. Choices are: [0 (No gesture), 1("WAIT"), 2("PROCEED"), 3("EXCUSE ME")]. Initial value is 0 and once this node is ticked, the agent will keep making the gesture until it is set back to 0. 
+        - <RegularNav agent_id="{id}" time_step="{dt}"/> : Makes the agent perform standard social-force-model based motion planning, where the robot is treated as a normal obstacle.
+        - <LookAtRobot agent_id="{id}" /> : Makes the agent look in the direction of the robot
+        - <FollowRobot agent_id="{id}" time_step="{dt}"/>: Makes the agent follow the robot
+        - <AvoidRobot agent_id="{id}" time_step="{dt}"/>: Makes the agent overly avoid the robot.
+        - <GiveWaytoRobot agent_id="{id}" time_step="{dt}"/>: Makes the agent give way to the robot.
+        - <BlockRobot agent_id="{id}" time_step="{dt}"/>: Makes the agent move in front of the robot and block it
+    - Note that all these actions run perpetually unless they are put within an inverted TimeExpiredCondition block or after a condition. 
+         - Example:
+         1. Make the agent follow the robot perpetually:
+            <Sequence name='follow_robot_perpetually'>
+                <FollowRobot agent_id="{id}" time_step="{dt}"/>
+            </Sequence>
+        2. Make the agent follow the robot for 10 seconds:
+            <Sequence name='follow_robot_perpetually'>
+                <Inverter>
+                    <TimeExpiredCondition seconds="10.0" ts="{dt}" only_once="True" />
+                </Inverter>
+                <FollowRobot agent_id="{id}" time_step="{dt}"/>
+            </Sequence>
+        3. Make the agent follow the robot until its no longer visible:
+            <Sequence name='follow_robot_perpetually'>
+                <IsRobotVisible agent_id="{id}" distance="2.0"/>
+                <FollowRobot agent_id="{id}" time_step="{dt}"/>
+            </Sequence>
+            
     - BT Decorators:
         - Inverter: An inverter block inverts the output of its children (If children output failure, inverter outputs success and vice-versa).
+    - In order to make the human go to their assigned next goal with regular navigation, use the following block as-is within the behavior tree without any modifications:
+        <Sequence name="RegNav">
+            <SetBlackboard output_key="agentid" value="{id}" /> 
+            <SetBlackboard output_key="timestep" value="{dt}" /> 
+            <SubTree ID="RegularNavTree" id="agentid" dt="timestep" /> 
+        </Sequence> 
 
-The following behavior tree is available for including as a subtree, which implements a simple obstacle-avoiding human:
-    - BTRegularNav.xml:         
-    <root main_tree_to_execute = "RegularNavTree">
-        <BehaviorTree ID="RegularNavTree">
-            <Fallback name="RegularNavFallback">
-                <Sequence name="RegularNavigation">
-                    <Inverter>
-                        <IsGoalReached agent_id="{id}" />
-                    </Inverter>
-                    <RegularNav agent_id="{id}" time_step="{dt}" />
+    - NOTE that the overall objective of a human is to reach their goal. Thus, always return all behavior trees in the following structure:
+    <?xml version='1.0' encoding='utf-8'?>
+    <root main_tree_to_execute='WaitForProceedTree'>
+        <include path='BTRegularNav.xml'/>
+        <BehaviorTree ID='WaitForProceedTree'>
+            <Fallback name='VisibilityFallback'>
+                <Sequence name = '??'>
+                
+                <!--- ADD REQUIRED BEHAVIOR HERE     -->
+                
                 </Sequence>
-                <UpdateGoal agent_id="{id}" />
+                <Sequence name='RegNav'>
+                    <SetBlackboard output_key='agentid' value='{id}' />
+                    <SetBlackboard output_key='timestep' value='{dt}' />
+                    <SubTree ID='RegularNavTree' id='agentid' dt='timestep'/>
+                </Sequence>
             </Fallback>
         </BehaviorTree>
     </root>
+
 Now answer the following question:
 
 If i want a human to gesture "WAIT" what should be the corresponding xml code
@@ -161,7 +183,9 @@ This sequence ensures that the agent waits for 50 seconds before checking if the
                     <root main_tree_to_execute="WaitAndCheckVisibilityTree">
     <BehaviorTree ID="WaitAndCheckVisibilityTree">
         <Sequence name="WaitAndCheckSequence">
-            <TimeExpiredCondition seconds="50" ts="{dt}" only_once="true" />
+            <Inverter>
+                <TimeExpiredCondition seconds="50" ts="{dt}" only_once="true" />
+            </Inverter>
             <IsRobotVisible agent_id="{id}" distance="some_distance_value"/>
         </Sequence>
     </BehaviorTree>
@@ -292,12 +316,6 @@ The first child of the fallback node is a sequence node named `WaitForProceed`. 
     - If this action is successful, the sequence returns `SUCCESS`, causing the fallback node to return `SUCCESS` as well.
 #### Second Sequence Node (`RegNav`)
 If the first sequence (`WaitForProceed`) fails, the fallback node proceeds to execute the second sequence node named `RegNav`.
-1. **`SetBlackboard` Actions**
-    - Sets the blackboard key `agentid` to the value of `{id}`.
-    - Sets the blackboard key `timestep` to the value of `{dt}`.
-2. **Subtree (`RegularNavTree`)**
-    - Executes the `RegularNavTree` subtree using the `agentid` and `timestep` values set in the blackboard.
-    - This subtree contains the regular navigation behavior for the human agent, likely involving obstacle avoidance and standard motion planning.
 ### Summary
 The human agent's behavior can be summarized as follows:
 1. The agent first checks if the robot is visible within a 4.0 unit distance.
@@ -316,9 +334,11 @@ Below is the corrected behavior tree to implement the given behavior exactly.
             <Sequence name='WaitForProceed'>
                 <IsRobotVisible agent_id='{id}' distance='4.0'/>
                 <RobotSays agent_id='{id}' message='2'/>
-                <SetBlackboard output_key='agentid' value='{id}' />
-                <SetBlackboard output_key='timestep' value='{dt}' />
-                <SubTree ID='RegularNavTree' id='agentid' dt='timestep'/>
+                <Sequence name='RegNav'>
+                    <SetBlackboard output_key='agentid' value='{id}' />
+                    <SetBlackboard output_key='timestep' value='{dt}' />
+                    <SubTree ID='RegularNavTree' id='agentid' dt='timestep'/>
+                </Sequence>
             </Sequence>
             <Sequence name='RegNav'>
                 <SetBlackboard output_key='agentid' value='{id}' />
@@ -347,6 +367,7 @@ YOU MUST NOT USE ANY CUSTOM ACTION/CONDITION NODES AND ONLY USE THE NODES AVAILA
 Return an answer in JSON format shown below:"""+"""
 {   
     'REASONING': <reasoning behind tree design>,
+    'TREE DESCRIPTION': <Direct Translation of Behavior Tree to Simple English>,
     'TREE': <XML Behavior Tree ONLY>,
 }
 """
@@ -357,6 +378,7 @@ Return an answer in JSON format shown below:"""+"""
                 "type":"text",
                 "text":"""{
     'REASONING': "The behavior can be achieved by running the BlockRobot node for 40s if the robot is visible with MakeGesture and falling back to regularNav when the robot is not visible.",
+    'TREE DESCRIPTION': "If the robot is visible,make the gesture ('WAIT') then block the robot for 40s. If the robot is not visible, navigate normally to the goal location"
     'TREE':""
     <root main_tree_to_execute = "BullyHumanTree">
         <include path="BTRegularNav.xml"/>        
@@ -394,6 +416,7 @@ YOU MUST NOT USE ANY CUSTOM ACTION/CONDITION NODES AND ONLY USE THE NODES AVAILA
 Return an answer in JSON format shown below:"""+"""
 {   
     'REASONING': <reasoning behind tree design>,
+    'TREE DESCRIPTION': <Direct Translation of Behavior Tree to Simple English>,
     'TREE': <XML Behavior Tree ONLY>,
 }
 """
@@ -404,9 +427,10 @@ Return an answer in JSON format shown below:"""+"""
                 "type":"text",
                 "text":"""{
                     
-                    'REASONING':"he human waits for the robot to say 'PROCEED' (gesture code 2) "
+                    'REASONING':"The human waits for the robot to say 'PROCEED' (gesture code 2) "
               'when visible at the intersection and when it is moving, and then continues towards '
-              'their goal using RegularNav."
+              'their goal using RegularNav.",
+              'TREE DESCRIPTION':"If the robot is visible and it is moving and it says 'PROCEED' then make gesture (No Gesture) and continue regular navigation to goal. Otherwise, continue continue regular navigation to goal",
                     'TREE':
          "<root main_tree_to_execute = "HumanAtIntersectionTree">
              <include path="BTRegularNav.xml"/>
@@ -417,9 +441,11 @@ Return an answer in JSON format shown below:"""+"""
                          <RobotMoved agent_id='{id}'/>
                          <RobotSays agent_id="{id}" message="2" />
                          <MakeGesture agent_id="{id}" message="0" />
-                         <SetBlackboard output_key="agentid" value="{id}" />
-                         <SetBlackboard output_key="timestep" value="{dt}"/>
-                         <SubTree ID="RegularNavTree" id="agentid",dt="timestep" /> <!-- Using Subtree -->
+                         <Sequence name="RegNav">
+                            <SetBlackboard output_key="agentid" value="{id}" />
+                            <SetBlackboard output_key="timestep" value="{dt}"/>
+                            <SubTree ID="RegularNavTree" id="agentid",dt="timestep" /> <!-- Using Subtree -->
+                        </Sequence>
                      </Sequence>
                      <Sequence name="RegNav">
                          <MakeGesture agent_id="{id}" message="0"/>
@@ -440,11 +466,12 @@ Return an answer in JSON format shown below:"""+"""
             "content":[{
                 "type":"text",
                 "text":""" Now, create a behavior tree for the following behavior:
-If the robot is visible at the intersection, the human will wait for the robot to say 'PROCEED' and then continue towards their goal normally, treating the robot as a normal obstacle afterward.
+The human ignores the robot.
 YOU MUST NOT USE ANY CUSTOM ACTION/CONDITION NODES AND ONLY USE THE NODES AVAILABLE.
 Return an answer in JSON format shown below:"""+"""
 {   
     'REASONING': <reasoning behind tree design>,
+    'TREE DESCRIPTION': <Direct Translation of Behavior Tree to Simple English>,
     'TREE': <XML Behavior Tree ONLY>,
 }
 """
@@ -454,28 +481,16 @@ Return an answer in JSON format shown below:"""+"""
             "content":[{
                 "type":"text",
                 "text":"""{{
-        'REASONING': "The human waits for the robot to say 'PROCEED' (gesture code 2) "
-              'when visible at the intersection and then continues towards '
-              'their goal using RegularNav.',
+        'REASONING': "To make the human ignore the robot, it is sufficient for them to only continue normal navigation to the goal and not behave in any special way towards the human.",
+        'TREE DESCRIPTION': "Regular navigation towards goal.",
         'TREE': '<root main_tree_to_execute = "HumanAtIntersectionTree">
              <include path="BTRegularNav.xml"/>
-             <BehaviorTree ID="HumanAtIntersectionTree">
-                 <Fallback name="VisibilityAndGestureFallback">
-                     <Sequence name="WaitForProceedSequence">
-                         <IsRobotVisible agent_id="{id}" distance="4.0" />
-                         <RobotSays agent_id="{id}" message="2" />
-                         <MakeGesture agent_id="{id}" message="0" />
-                         <SetBlackboard output_key="agentid" value="{id}" />
-                         <SetBlackboard output_key="timestep" value="{dt}" />
-                         <SubTree ID="RegularNavTree" id="agentid" , dt="timestep" /> <!-- Using Subtree -->
-                     </Sequence>
+             <BehaviorTree ID="IgnoreRobotNav">
                      <Sequence name="RegNav">
-                         <MakeGesture agent_id="{id}" message="0"/>
                          <SetBlackboard output_key="agentid" value="{id}"/>
                          <SetBlackboard output_key="timestep" value="{dt}"/>
                          <SubTree ID="RegularNavTree" id="agentid",dt="timestep" /> <!-- Using Subtree -->
                      </Sequence>
-                 </Fallback>
              </BehaviorTree>
          </root>'} """
             }]
@@ -494,6 +509,7 @@ YOU MUST NOT USE ANY CUSTOM ACTION/CONDITION NODES AND ONLY USE THE NODES AVAILA
 Return an answer in JSON format shown below:"""+"""
 {   
     'REASONING': <reasoning behind tree design>,
+    'TREE DESCRIPTION': <Description of the behavior generated by this tree in natural language>,
     'TREE': <XML Behavior Tree ONLY>,
 }"""
         }]

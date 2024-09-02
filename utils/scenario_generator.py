@@ -6,7 +6,8 @@ import json,yaml,copy
 from utils.scene_graph import SceneGraph
 import pprint
 import tenacity
-
+import numpy as np
+from collections import defaultdict
 class ScenarioGenerator:
     '''
         Helper class for generating scenarios.
@@ -45,25 +46,37 @@ class ScenarioGenerator:
                 location_description = self.config['location']['description']
             )
   
-    def get_trajectories(self,scenario_desc):
+    def get_trajectories(self,scenario_desc,edits=None,prev_output=None):
         if self.config['use_handcrafted_scenario']:
             return self.config['handcrafted_scenario']['groupids'],self.config['handcrafted_scenario']['trajectories']
         
         else:
-            return self.qh.query_traj(
-            scene_graph_json=self.scene_graph_json,
-            node_types=self.node_types,
-            edge_types=self.edge_types,
-            encoded_img=self.encoded_map_img,
-            scenario_description=scenario_desc
-        )       
+            if edits!=None:
+                return self.qh.edit_traj(
+                scene_graph_json=self.scene_graph_json,
+                node_types=self.node_types,
+                edge_types=self.edge_types,
+                encoded_img=self.encoded_map_img,
+                scenario_description=scenario_desc,
+                edits = edits,
+                prev_output = prev_output
+                )
+            else:
+                return self.qh.query_traj(
+                scene_graph_json=self.scene_graph_json,
+                node_types=self.node_types,
+                edge_types=self.edge_types,
+                encoded_img=self.encoded_map_img,
+                scenario_description=scenario_desc,
+                )       
+        
     
     def generate_scenario(self):
         '''
             Generates a scenario with hunavsim components using the query handler
         '''
         try:
-            for attempt in tenacity.Retrying(stop=tenacity.stop_after_attempt(3),retry_error_callback=lambda x: eprint(x)):
+            for attempt in tenacity.Retrying(retry_error_callback=lambda x: eprint(x)):
                 #for _ in range(4):
                 with attempt:
                     ######################## SCENARIO GENERATION #####################
@@ -94,7 +107,9 @@ class ScenarioGenerator:
                                 behaviors_parsed[b.name.lower().replace(' ','')] = b.behavior
                             if self.debug:
                                 rprint("Reasoning:")
-                                print(scenario.reasoning)
+                                rprint(f"{scenario.reasoning.scenario_importance}")
+                                rprint("Simulating humans:")
+                                rprint(scenario.reasoning.simulating_humans)
                             
                             continue_choice = False
                             while True:
@@ -117,7 +132,7 @@ class ScenarioGenerator:
                                                'humanbehavior':behaviors_parsed},f)
                                 break
                             
-                    ######################### TRAJECECTORY GENERATION #####################
+                    ######################### TRAJECTORY GENERATION #####################
                     if self.config['load_trajectory_response']:
                         #LOAD TRAJECTORY
                         lprint('loading saved trajectory')
@@ -127,11 +142,17 @@ class ScenarioGenerator:
                         trajectories_parsed = traj['trajectories']
                         interaction_points_parsed = traj['interaction_points']
                     else:
+                        edits = None
                         while True:
                             #GENERATE TRAJECTORY
-                            trajectories = self.get_trajectories(scenario_desc)
+                            if edits == None:
+                                trajectories = self.get_trajectories(scenario_desc)
+                            else:
+                                trajectories = self.get_trajectories(scenario_desc,edits=edits,prev_output=trajectories)
+                                                            
                             if trajectories == None:
                                 eprint("Invalid Trajectories generated:")
+                                edits=None
                                 retry_choice=None
                                 while True:
                                     iprint("Retry Trajectory Regeneration (1) or Regenerate Scenario(2)?:")
@@ -145,7 +166,6 @@ class ScenarioGenerator:
                                     raise Exception
                                 else:
                                     continue
-                                
                             rprint("GENERATED TRAJECTORIES:")
                             rprint(f"Robot Trajectory: ")
                             print(trajectories.robot)
@@ -155,19 +175,25 @@ class ScenarioGenerator:
                             
                             continue_choice = False
                             while True:
-                                iprint("CONTINUE WITH PROPOSED TRAJECTORIES(Y) OR RETRY(N)?:")
+                                iprint("CONTINUE WITH PROPOSED TRAJECTORIES(Y) or RETRY(N) or SUGGEST EDITS(E)?:")
                                 continue_choice = input().lower().strip()
-                                if continue_choice!='y' and continue_choice!='n':
+                                if continue_choice!='y' and continue_choice!='n' and continue_choice!='e':
                                     eprint("invalid input")
                                     continue
                                 else:
                                     if continue_choice=='y':
                                         continue_choice = True
-                                    else:
+                                        edits = None
+                                    elif continue_choice == 'n':
                                         continue_choice = False                           
+                                        edits = None
+                                    else:
+                                        #edit the response and send back to LLM
+                                        iprint("HOW WOULD YOU LIKE TO CHANGE THE TRAJECTORIES? (Enter text):")
+                                        edits = input().lower().strip()
                                     break
                                         
-                            if continue_choice:
+                            if continue_choice and edits==None:
                                 trajectories_parsed = {}
                                 interaction_points_parsed = {}
                                 groupids = {}
@@ -196,16 +222,56 @@ class ScenarioGenerator:
                             lprint("Generating Behavior Trees")
                             behavior_trees_parsed = {}
                             for name, behav in behaviors_parsed.items():
-                                lprint(f"Generating Tree for {name}...")
-                                behavior_response =  self.qh.query_bt(
-                                    behavior_description=behav,
-                                    node_library=self.node_library
-                                )
-                                if behavior_response == None:
-                                    if self.debug:
-                                        raise Exception
-                                behavior_trees_parsed[name] = behavior_response.tree
-                                rprint(f"Generated Behavior Tree for {name}")
+                                edits = None
+                                behavior_response=None
+                                while True:
+                                    lprint(f"Generating Tree for {name}...")
+                                    behavior_response =  self.qh.query_bt(
+                                        behavior_description=behav,
+                                        node_library=self.node_library,
+                                        edits = edits,
+                                        prev_bt=behavior_response
+                                    )
+                                    if behavior_response == None:
+                                        # if self.debug:
+                                        retry_choice=None
+                                        while True:
+                                            iprint("Retry Behavior generation (1) or Regenerate Scenario(2)?:")
+                                            retry_choice = input().lower().strip()
+                                            if retry_choice!='1' and retry_choice!='2':
+                                                eprint("invalid input, please press (1) or (2)")
+                                                continue
+                                            else:
+                                                break
+                                        if retry_choice=='2':
+                                            raise Exception
+                                        else:
+                                            continue
+                                    behavior_trees_parsed[name] = behavior_response.tree
+                                    rprint(f"Generated Behavior Tree for {name}")
+                                    
+                                    continue_choice = False
+                                    while True:
+                                        iprint("CONTINUE WITH THIS BEHAVIOR(Y) OR RETRY(N) or SUGGEST EDITS(E)?:")
+                                        continue_choice = input().lower().strip()
+                                        if continue_choice!='y' and continue_choice!='n' and continue_choice!='e':
+                                            eprint("invalid input")
+                                            continue
+                                        else:
+                                            if continue_choice=='y':
+                                                continue_choice = True
+                                                edits = None
+                                            elif continue_choice == 'n':
+                                                continue_choice = False
+                                                edits = None
+                                            else:
+                                                #edit the response and send back to LLM
+                                                iprint("HOW WOULD YOU LIKE TO CHANGE THE TRAJECTORIES? (Enter text):")
+                                                edits = input().lower().strip()
+                                            break
+                                    if continue_choice and edits == None:
+                                        break                            
+
                             with open(self.config['bt_file'],'w') as f:
                                 json.dump(behavior_trees_parsed,f)
                             break
@@ -242,10 +308,11 @@ class ScenarioGenerator:
             'max_vel': 1.5,
             'radius': 0.4,
             'init_pose': {'x': None, 'y': None, 'z': 1.25, 'h': 0.0},
-            'goal_radius': 0.3,
+            'goal_radius': 0.5,
             'cyclic_goals': False,
             'goals': [],
             }
+        spawn_radius = 0.5
         agents = {} 
         # transform from scene graph to world trajectories
         world_trajectories = {}        
@@ -254,6 +321,14 @@ class ScenarioGenerator:
             for l in v:
                 world_trajectories[k].append(self.pix2world(self.scgraph.graph.nodes[l]['pos']))
         
+        invert_group_ids = defaultdict(lambda:[])
+        for k,v in groupids.items():
+            invert_group_ids[v].append(k)
+        angles = defaultdict(lambda: np.random.uniform(0,np.pi*2.0))
+        for k,v in invert_group_ids.items():
+            if k!=-1:
+                for i,human in enumerate(v):
+                    angles[human] = i*np.pi*2.0/len(v)
         #gather all peds trajectories
         i = 0
         for name,trajectory in trajectories.items():
@@ -264,12 +339,17 @@ class ScenarioGenerator:
                 agents[name]['behavior'] = 7+i
                 agents[name]['group_id'] = groupids[name]
                 for j,g in enumerate(world_trajectories[name]):
-                    if j == 0:
+                    if j == 0: #starting position of human
+                        r = np.random.uniform(0.0,spawn_radius)
+                        theta = np.random.uniform(0,2*np.pi)
+                        if groupids[name]!=-1:
+                            theta = angles[name]
+                        
                         agents[name]['init_pose'] = {
-                            'x':g[0],
-                            'y':g[1],
+                            'x':float(g[0] + r*np.cos(angles[name])),
+                            'y':float(g[1] + r*np.sin(angles[name])),
                             'z':1.25,
-                            'h':0.0,
+                            'h': float(angles[name]+np.pi)#float(theta),
                         }
                         if len(world_trajectories[name]) <= 1:
                             agents[name]['goals'].append(f'g{1}')
@@ -286,6 +366,9 @@ class ScenarioGenerator:
                             'h':1.25
                         }
                 i+=1
+                
+                if i>=len(behaviors_trees.keys()):
+                    break
         agents_yaml['hunav_loader']['ros__parameters'].update(agents)
         
         #write trajectories in hunav_sim        
@@ -300,8 +383,8 @@ class ScenarioGenerator:
         for j,g in enumerate(world_trajectories['robot']):
                 if j == 0:
                     robot_poses['initial_pose'] = {
-                        'x':g[0],
-                        'y':g[1],
+                        'x':g[0] + 0.5*np.random.normal(),
+                        'y':g[1] + 0.5*np.random.normal(),
                         'yaw':0.0,
                     }
                 else:
@@ -315,6 +398,13 @@ class ScenarioGenerator:
         
         with open(os.path.join(file_paths['hunav_gazebo_wrapper_dir'],'config','robot_poses.yaml'),'w') as f:
             yaml.dump(robot_poses,f)
+
+        with open(os.path.join(file_paths['hunav_gazebo_wrapper_dir'],'config','launch_params.yaml'),'w') as f:
+            yaml.dump({
+                'robot_poses':os.path.join(file_paths['hunav_gazebo_wrapper_dir'],'config','robot_poses.yaml'),
+                'scenario':os.path.join(os.getcwd(),self.config['paths']['save_dir'],self.config['experiment_name']+'_'+'response_traj.json'),
+                'world_name':self.config['location']['name']
+                },f)
         
         #write behavior files for hunavsim
         i = 0

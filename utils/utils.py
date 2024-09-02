@@ -25,12 +25,17 @@ class Trajectories(BaseModel):
     robot: list[str]
     humans: list[HumanTraj]
 
+class StructuredScenarioReasoning(BaseModel):
+    scenario_importance: str
+    simulating_humans: list[str]
+    
 class StructuredTrajResponse(BaseModel):
     reasoning: str
     trajectories: Trajectories
 
 class StructuredBTResponse(BaseModel):
     reasoning: str
+    tree_description:str
     tree: str
     
 class Behavior(BaseModel):
@@ -41,7 +46,7 @@ class StructuredScenarioResponse(BaseModel):
     scenariodescription: str
     numberofhumans: int
     humanbehavior: list[Behavior]
-    reasoning: str
+    reasoning: StructuredScenarioReasoning
     
 
 eprint = lambda x:cprint(x,'red') #error
@@ -113,7 +118,7 @@ def validate_bt(tree,node_library,debug=False):
             included_files = tree.findall('.//include')
             if len(included_files)!=1:
                 if debug:
-                    eprint("RegularNav problem")
+                    eprint("File for regularnav is not included")
                 return False         
             if included_files[0].attrib != {'path': 'BTRegularNav.xml'}:
                 if debug:
@@ -127,6 +132,10 @@ def validate_bt(tree,node_library,debug=False):
                 if debug:
                     eprint(f'{k} not in node_library[{elem.tag}]')
                 return False
+            if k == 'agent_id':
+                if v!="""{id}""":
+                    print("Incorrect agent id")
+                    return False
             
         #check if all attributes are correct
         if len(node_library[elem.tag])!=len(elem.attrib.keys()):

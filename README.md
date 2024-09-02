@@ -36,7 +36,10 @@ load_trajectory_response: true
 load_bt_response: false
 ```
 
-2. Run the scenario generator with ``` python main.py ```. You will be asked for confirmations for the generated scenarios and trajectories. The scenario generator could fail (LLMs are imperfect.), the script will try to retry scenario generation multiple times, please rerun if there is a full failure. If the trajectories or behaviors fail to generate, the scenarios maybe regenerated. You can refer to the scene graph image to inspect the proposed paths for the human and the robot.
+2. Run the scenario generator with ``` python main.py ```. 
+- You will be asked for confirmations for the generated scenarios and trajectories. 
+- The scenario generator could fail (LLMs are imperfect.), the script will try to retry scenario generation multiple times, please rerun if there is a full failure.
+- If the trajectories or behaviors fail to generate, the scenarios maybe regenerated. You can refer to the scene graph image to inspect the proposed paths for the human and the robot.
 
 ### Launching the Scenario in Gazebo
 - In a separate terminal, source the environment with ROS2 installed. 
@@ -48,8 +51,10 @@ colcon build --packages-select hunav_gazebo_wrapper hunav_sim
 source install/setup.bash
 ```
 2. Launch scenario with ``` ros2 launch hunav_gazebo_wrapper scenario.launch.py ```
+- Due to the many ways in which LLMs can go wrong despite error handling approaches, if there's a (non-ROS related) error in this command, please regenerate the scenario.
+- The scenario starts in a pause state, giving you time to open any other analysis tools or nodes. Remember to unpause the gazebo simulation with Space-bar.
 3. Control the robot:
-    - To Teleop: Run the teleop node. E.g.: ``` ros2 run hunav_gazebo_wrapper teleop_keyboard_twist ``` to control the robot in another terminal. 
+    - To Teleop: Run the teleop node. E.g.: ``` ros2 run hunav_gazebo_wrapper teleop_keyboard_twist.py ``` to control the robot in another terminal. 
     - Use Nav2 planners: ```ros2 launch hunav_gazebo_wrapper nav2_follow_waypoints.launch.py params_file:=<nav2_params_file>```.
 - Also note that we throttle the movements of the humans in order to increase the likelihood of the generated scenario to occur in the simulation (for example, we make the human wait at a previous waypoint if the robot has not yet reached the point where the human and the robot must meet for the scenario. )
 3. The humans and the robot in our framework can communicate through gestures. Run the following script to observe when the robot/human make a gesture: ```ros2 run hunav_gazebo_wrapper gesture_listener.py```. Publish to the ```/robot_gesture``` topic to make gestures towards humans with: ```ros2 run rqt_publisher rqt_publisher```. The integer robot gestures have the following semantic meaning: [0(No gesture), 1("WAIT"), 2("PROCEED"),3("ACKNOWLEDGED"),4("EXCUSE ME")].

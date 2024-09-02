@@ -23,7 +23,7 @@ class SceneGraphBuilder:
         self.zoom_out = zoom_out
         self.unscaled_image = self.image.copy()
         self.image = self.image.resize((round(width*self.zoom),round(height*self.zoom)))
-        print(self.image.size)
+        # print(self.image.size)
         self.image_tk = ImageTk.PhotoImage(self.image)
         # Create canvas for image display
         # vbar = tk.Scrollbar(self.root,orient=tk.VERTICAL)
@@ -41,7 +41,7 @@ class SceneGraphBuilder:
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.image_tk)
         self.output_image = self.unscaled_image.resize((round(width*self.zoom_out),round(height*self.zoom_out))).copy()
         self.output_image_draw = ImageDraw.Draw(self.output_image,mode='RGBA')
-        print(self.output_image_draw.mode)
+        # print(self.output_image_draw.mode)
         # Initialize NetworkX graph
         self.graph = nx.Graph()
 
@@ -74,6 +74,7 @@ class SceneGraphBuilder:
         self.parent_imgfont = ImageFont.truetype("arial.ttf", self.export_imgfontsize)
         self.node_names = []
         self.scgraph_save_path = scgraph_path
+    
     def save_canvas_as_img(self, event):
         print("Saving image...")
         self.output_image.save(os.path.join(self.img_save_path))
@@ -98,9 +99,9 @@ class SceneGraphBuilder:
         while True:
             try:
                 node_type = int(input(dialog_msg))#simpledialog.askinteger("Node Type", dialog_msg)
-                print(node_type)
+                # print(node_type)
                 break
-            except ValueError:
+            except Exception as e:
                 print("Invalid node type, try again")
                 
         
@@ -116,7 +117,7 @@ class SceneGraphBuilder:
         full_node_name = random_node_name + node_name
         if node_type and 0<node_type<len(self.node_types)+1:
             # Add node to graph
-            print((x,y))
+            # print((x,y))
             self.graph.add_node(full_node_name, type=self.node_types[node_type-1], pos=(round(x/self.zoom), round(y/self.zoom)))
             
             self.nodes[full_node_name] = (x, y)
@@ -126,9 +127,9 @@ class SceneGraphBuilder:
             self.canvas.create_rectangle(x - self.parent_oval_size, y - self.parent_oval_size, x + self.parent_oval_size, y + self.parent_oval_size, fill='yellow', width = 5, outline="blue")
             #self.canvas.create_text(x-0.5, y-0.5, text=full_node_name,font=(self.pimgfont, self.parent_imgfontsize), fill="black")
             self.canvas.create_text(x, y, text=full_node_name,font=(self.pimgfont, self.parent_imgfontsize), fill="black")
-            print(f'x-:{x - self.parent_oval_size}, y-:{y - self.parent_oval_size}')
-            print(f'x+:{x + self.parent_oval_size}, y+:{y + self.parent_oval_size}')
-            print(f'full node name:{full_node_name}')
+            #print(f'x-:{x - self.parent_oval_size}, y-:{y - self.parent_oval_size}')
+            #print(f'x+:{x + self.parent_oval_size}, y+:{y + self.parent_oval_size}')
+            #print(f'full node name:{full_node_name}')
             
             self.output_image_draw.rectangle(
                 (
@@ -164,22 +165,22 @@ class SceneGraphBuilder:
                     dialog_msg += f"\n{i+1}:{n}"
                 dialog_msg+='\n'
                 #edge_type = simpledialog.askinteger("Node Type", dialog_msg)
-                edge_type = int(input(dialog_msg))
-                print(edge_type)
-                print(self.edge_types[edge_type-1])
+                try:
+                    edge_type = int(input(dialog_msg))
+                except Exception as e:
+                    return
+                #print(edge_type)
+                #print(self.edge_types[edge_type-1])
                 self.graph.add_edge(self.current_start_node, end_node,type = self.edge_types[edge_type-1])
                 self.edges.append((self.current_start_node, end_node))
-                
                 current_start_node = self.nodes[self.current_start_node]
                 # Display edge visually
                 self.canvas.create_line(*current_start_node, *self.nodes[end_node], fill="blue")
                 self.output_image_draw.line([round(current_start_node[0]*self.zoom_out/self.zoom),round(current_start_node[1]*self.zoom_out/self.zoom), round(self.nodes[end_node][0]*self.zoom_out/self.zoom), round(self.nodes[end_node][1]*self.zoom_out/self.zoom)], fill="red", width=round(2*self.zoom_out/self.zoom))
                 
                 #print([*self.nodes[self.current_start_node], event.x, event.y])
-            self.current_start_node = None
-            self.current_start_node = None
-            
-            self.current_start_node = None          
+            self.current_start_node = None    
+              
             
     def move_from(self, event):
         ''' Remember previous coordinates for scrolling with the mouse '''

@@ -1,3 +1,4 @@
+from click import edit
 from utils.llm_models import models
 from utils.scene_graph import SceneGraph
 from prompts import *
@@ -119,7 +120,7 @@ class QueryHandler:
                                 "content":[
                                     {
                                         "type":"text",
-                                        "text": trq_response.json()
+                                        "text": trq_response_structured.json()
                                     }
                                 ]
                             }    
@@ -161,7 +162,7 @@ class QueryHandler:
                                         "content":[
                                             {
                                                 "type":"text",
-                                                "text": trq_response.json()
+                                                "text": trq_response_structured.json()
                                             }
                                         ]
                                     }    
@@ -184,7 +185,159 @@ class QueryHandler:
         else:
             return None
         
-    def query_bt(self,behavior_description,node_library):
+    def edit_traj(self, scene_graph_json,node_types,edge_types,encoded_img,scenario_description,edits,
+            prev_output):
+        '''
+        Queries the LLM for waypoints for human and robot (at once)
+        '''    
+        #generate full prompt
+        with open('prompts/reference/scene_graph.json','r') as f:
+            ref_scene_graph_json = json.load(f)
+        trQ = TrajectoryQuery(
+            ref_img_encoded = utils.encode_image('prompts/reference/scene_graph.png'),
+            ref_scene_graph = ref_scene_graph_json,
+            qa = parse_questions_answers('prompts/prompt_text/trajectory.txt')
+        )
+        trq_full_prompt = trQ.get_full_prompt(
+            scene_graph = str(scene_graph_json),
+            node_types = ','.join(node_types),
+            edge_types = ','.join(edge_types),
+            encoded_img = encoded_img,
+            sc_desc = scenario_description
+        )
+        scgraph = SceneGraph(scene_graph_json)
+        lprint("Querying LLM for Trajectories")
+        valid_trajectories = 0
+        all_trajectories_valid = False
+        payload = trq_full_prompt.copy()
+        reply = f"""
+                                You made the following mistakes:
+                                <ERRORS>
+                                Retry and Return the answer in the same JSON format.
+                """
+                
+        for attempt in tenacity.Retrying(stop=(tenacity.stop_after_attempt(self.retry_count) | tenacity.stop_after_delay(15)),
+                                            wait=tenacity.wait_random_exponential(multiplier=1,max=40)):
+            #retry from scratch
+            payload = trq_full_prompt.copy()
+            last_msg = payload[-1]
+            payload.append(
+                            {
+                                "role":"assistant",
+                                "content":[
+                                    {
+                                        "type":"text",
+                                        "text": prev_output.json()
+                                    }
+                                ]
+                            }    
+                        )
+            payload.append(last_msg)
+            payload[-1]['content'][-1]['text']+=f" \n Minimally change your previous response to incorporate these comments: (ensure that the new trajectories are still valid): {edits}"
+            retr_traj = 0
+            valid_trajectories = False
+            with attempt:
+                while retr_traj<5 and not valid_trajectories:
+                    trq_response = self.model.get_response(messages = payload,response_format=StructuredTrajResponse)
+                    trq_response_structured = self.model.extract_response(trq_response)
+                    if not trq_response_structured:
+                        if self.debug:
+                            eprint("Inavlid model response")
+                        raise ValueError('Invalid model response')
+                    
+                    all_trajectories_valid = True 
+                    trajectories =  trq_response_structured.trajectories
+                    robot_traj = trajectories.robot
+                    human_traj = trajectories.humans
+                    all_human_traj = [h.trajectory for h in human_traj]
+                    reasoning = trq_response_structured.reasoning
+                    #test trajectory correctness
+                    for v in [robot_traj] + all_human_traj:
+                        traj_valid,errors = scgraph.isvalidtrajectory(v)
+                        if not traj_valid: #requery LLM with error message
+                            all_trajectories_valid = False
+                            error_string = ""
+                            for err in errors:
+                                error_string+=f"There is no edge connecting {err[0]} and {err[1]}!\n"
+
+                    if not all_trajectories_valid:                        
+                        if self.debug:
+                                eprint("Disconnected Trajectory Output, Retrying")    
+                                eprint([robot_traj] + all_human_traj)
+                        payload.append(
+                            {
+                                "role":"assistant",
+                                "content":[
+                                    {
+                                        "type":"text",
+                                        "text": trq_response_structured.json()
+                                    }
+                                ]
+                            }    
+                            )
+                        payload.append({
+                                "role": "user", 
+                                "content": [
+                                    {
+                                        "type":"text",
+                                        "text": reply.replace('<ERRORS>',error_string)
+                                    }
+                                        ]
+                                    }
+                                    )
+                        retr_traj+=1
+                        
+                    else:
+                        #check if the robot meets any of the humans:
+                        rhmeet = True
+                        # for traj in all_human_traj: #every human should encounter the robot in some node
+                        #     if not scgraph.areTrajectoriesIntersecting(robot_traj,traj):
+                        #         rhmeet = False
+                        #         if self.debug: 
+                        #             eprint("Non intersecting trajectories, Retrying..")
+                        #         break
+                        for human in human_traj:
+                            if not((human.interaction_point in human.trajectory) and (human.interaction_point in robot_traj)):
+                                rhmeet = False
+                                break
+                        
+                        if rhmeet:
+                            valid_trajectories = True
+                            break
+                        else:
+                            retr_traj+=1
+                            payload.append(
+                                    {
+                                        "role":"assistant",
+                                        "content":[
+                                            {
+                                                "type":"text",
+                                                "text": trq_response_structured.json()
+                                            }
+                                        ]
+                                    }    
+                                    )
+                            payload.append({
+                                    "role": "user", 
+                                    "content": [
+                                        {
+                                            "type":"text",
+                                            "text": reply.replace('<ERRORS>',"The Paths of the human and the robot don't intersect or the interaction point is set incorrectly.")
+                                        }
+                                            ]
+                                        }
+                                        )
+        if valid_trajectories:
+            if self.debug:
+                lprint("Reasoning: ")
+                print(reasoning)
+            return trajectories         
+        else:
+            return None
+        
+    
+    
+    def query_bt(self,behavior_description,node_library,edits = None,prev_bt=None):
         '''
         Queries the LLM for a BT given behavior description
         '''
@@ -199,6 +352,22 @@ class QueryHandler:
                 with attempt:
                     while retr_bt<3 and not valid_bt:
                         lprint(f'Querying for BT')
+                        
+                        if edits!=None and prev_bt!=None:
+                            last_msg = payload[-1]
+                            payload.append(
+                                {
+                                "role":"assistant",
+                                "content":[
+                                    {
+                                        "type":"text",
+                                        "text": prev_bt.json()
+                                    }
+                                ]
+                            } 
+                            )
+                            payload.append(last_msg)
+                            payload[-1]['content'][-1]['text']+=f" \n Minimally change your previous response to incorporate these comments: (ensure that the new trajectories are still valid): {edits}"
                         try:           
                             btq_response = self.model.get_response(messages = payload,response_format=StructuredBTResponse)
                         except Exception as e:
@@ -237,7 +406,10 @@ class QueryHandler:
                             continue
                         
                         if utils.validate_bt(test_xml,node_library,self.debug):
-                            lprint("Recieved Valid BT")
+                            lprint(f"Recieved Valid BT:")
+                            print(btq_response_structured.tree_description)
+                            if self.debug:
+                                pprint.pprint(btq_response_structured.tree)
                             return btq_response_structured
                         else:
                             eprint("Recieved Invalid BT")
