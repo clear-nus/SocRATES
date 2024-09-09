@@ -53,7 +53,7 @@ Rules:
         
     NOTE: AT ANY GIVEN POINT OF TIME, THE HUMAN CAN ONlY PEFORM ANY ONE OF THE ABOVE ACTIONS.
 - Make sure that you DO NOT SPECIFY OVERLY COMPLICATED behaviors for the humans because the simulator won't be able to handle it. However, make sure that the human behaviors are aligned with the description in the rough scenario
-- Every single action or condition involved in the human's behavior, should be from the set of capabilities mentioned above.
+- Every single action or condition involved in the human's behavior, should be from the set of capabilities mentioned above. For example, the humans cannot do something depending what another human does or pickup something or jump etc. because these capabilities are not present in the above list.
 
 Now answer the following question:
 Is the following a valid behavior for the simulated human: 

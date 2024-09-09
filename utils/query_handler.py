@@ -155,6 +155,8 @@ class QueryHandler:
                             valid_trajectories = True
                             break
                         else:
+                            if self.debug:
+                                eprint("Human and robot trajectories are non-intersecting")
                             retr_traj+=1
                             payload.append(
                                     {
@@ -334,9 +336,7 @@ class QueryHandler:
             return trajectories         
         else:
             return None
-        
-    
-    
+           
     def query_bt(self,behavior_description,node_library,edits = None,prev_bt=None):
         '''
         Queries the LLM for a BT given behavior description
@@ -405,7 +405,8 @@ class QueryHandler:
                             })
                             continue
                         
-                        if utils.validate_bt(test_xml,node_library,self.debug):
+                        bt_valid, errors = utils.validate_bt(test_xml,node_library,self.debug)
+                        if bt_valid:
                             lprint(f"Recieved Valid BT:")
                             print(btq_response_structured.tree_description)
                             if self.debug:
@@ -428,7 +429,7 @@ class QueryHandler:
                                 "content":[
                                     {
                                         "type":"text",
-                                        "text": " Please try again."
+                                        "text": f"Try again, you made the following mistake:{errors}"
                                     }
                                 ]
                             })    

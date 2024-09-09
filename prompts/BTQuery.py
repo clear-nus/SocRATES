@@ -92,7 +92,7 @@ Note that you can only fill in values for node attributes with "??".
             <SubTree ID="RegularNavTree" id="agentid" dt="timestep" /> 
         </Sequence> 
 
-    - NOTE that the overall objective of a human is to reach their goal. Thus, always return all behavior trees in the following structure:
+    - NOTE that the overall objective of a human is to reach their goal. Thus, ALWAYS ADD THE REGULAR NAVIGATION NODE AS A FALLBACK AS SHOWN BELOW:
     <?xml version='1.0' encoding='utf-8'?>
     <root main_tree_to_execute='WaitForProceedTree'>
         <include path='BTRegularNav.xml'/>
@@ -351,11 +351,8 @@ Below is the corrected behavior tree to implement the given behavior exactly.
 }"""
                 }
             ]
-        }
-        
-        ]
-        
-        bt_example_1 = [{
+        },
+        {
             "role":"user",
             "content":[{
                 "type":"text",
@@ -403,9 +400,8 @@ Return an answer in JSON format shown below:"""+"""
     </root>"",
 } """
             }]
-        }]
-        
-        bt_example_2 = [{
+        },     
+        {
             "role":"user",
             "content":[{
                 "type":"text",
@@ -458,10 +454,7 @@ Return an answer in JSON format shown below:"""+"""
          </root>"
             } """
             }]
-        }]
-        
-        
-        bt_example_3 = [{
+        },{
             "role":"user",
             "content":[{
                 "type":"text",
@@ -513,15 +506,7 @@ Return an answer in JSON format shown below:"""+"""
     'TREE': <XML Behavior Tree ONLY>,
 }"""
         }]
-    }   
-        
-        for msg in bt_example_1:
-            self.payload.append(msg)
-        for msg in bt_example_2:
-            self.payload.append(msg)
-        for msg in bt_example_3:
-            self.payload.append(msg)
-        
+    }           
         self.payload.append(new_behavior_query)
             
     def get_full_prompt(self,**kwargs):

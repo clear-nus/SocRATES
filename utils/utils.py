@@ -1,5 +1,6 @@
 import base64
 import json
+from os import error
 import tiktoken
 import math
 import io
@@ -97,57 +98,89 @@ def parse_questions_answers(file_path):
                 questions_answers.append((question, answer))
 
     return questions_answers
+
 def validate_bt(tree,node_library,debug=False):
+    regular_nav_present = False
     if len(tree.find('BehaviorTree'))!=1:
+        error_string = "Behavior Tree node can have only a single child"
         if debug:
-            eprint("Behavior Tree node has multiple children")
-        return False
+            eprint("Retrying Behavior Generation..")
+            #eprint(error_string)
+        return False,error_string
     
     for elem in tree.iter():
         if elem.tag not in node_library:
+            error_string = f'{elem.tag} not in node_library'
             if debug:
-                eprint(f'{elem.tag} not in node_library')
-            return False
+                eprint("Retrying Behavior Generation..")
+                #eprint(error_string)
+            return False,error_string
         
         if elem.tag == 'SubTree':
             if elem.attrib!={'ID': 'RegularNavTree', 'id': 'agentid', 'dt': 'timestep'}:
+                error_string = """RegularNav's attributes are wrong, it should be: <Sequence name='RegNav'>
+                <SetBlackboard output_key='agentid' value='{id}'/>
+                <SetBlackboard output_key='timestep' value='{dt}'/>
+                <SubTree ID='RegularNavTree' id='agentid' dt='timestep'/>
+            </Sequence>"""
                 if debug:
-                    eprint("RegularNav problem")
-                return False
+                    eprint("Retrying Behavior Generation..")
+                    #eprint(error_string)
+                return False,error_string
             #check if RegularNav is included for SubTree
             included_files = tree.findall('.//include')
             if len(included_files)!=1:
+                error_string = "File for regularnav is not included. Add it after the root element:  <include path='BTRegularNav.xml'/>"
                 if debug:
-                    eprint("File for regularnav is not included")
-                return False         
+                    eprint("Retrying Behavior Generation..")
+                    #eprint(error_string)
+                return False, error_string
             if included_files[0].attrib != {'path': 'BTRegularNav.xml'}:
+                error_string = "Path of the included file for regularnav is wrong. The correct way is: <include path='BTRegularNav.xml'/>"
                 if debug:
-                    eprint("RegularNav problem")
-                return False
+                    eprint("Retrying Behavior Generation..")
+                    #eprint(error_string)
+                return False,error_string
+            regular_nav_present = True
             continue
          
         #check for incorrect nodes
         for k,v in elem.attrib.items():
             if k not in node_library[elem.tag]:
+                error_string = f'{k} not in node_library[{elem.tag}]'
                 if debug:
-                    eprint(f'{k} not in node_library[{elem.tag}]')
-                return False
+                    eprint("Retrying Behavior Generation..")
+                    #eprint(error_string)
+                return False,error_string
             if k == 'agent_id':
                 if v!="""{id}""":
-                    print("Incorrect agent id")
-                    return False
+                    error_string = """Incorrect agent id. Only use "agent_id" in the nodes, nothing else"""
+                    if debug:
+                        eprint("Retrying Behavior Generation..")
+                        #eprint(error_string)
+                    return False,error_string
             
         #check if all attributes are correct
         if len(node_library[elem.tag])!=len(elem.attrib.keys()):
+            error_string = f"{node_library[elem.tag]} has incorrect attributes. They should be: {node_library[elem.tag]}"
             if debug:
-                eprint(f"{node_library[elem.tag]} attribute issue: {elem.attrib.keys()}")
-            return False
+                eprint("Retrying Behavior Generation..")
+                #eprint(error_string)
+            return False,error_string
+        
         for v in node_library[elem.tag]:
             if v not in list(elem.attrib.keys()):
+                error_string = f"{node_library[elem.tag]} has incorrect attributes. They should be: {node_library[elem.tag]}"
                 if debug:
-                    eprint(f"{node_library[elem.tag]} attribute issue: {elem.attrib.keys()}")
-                return False
-    return True
+                    eprint("Retrying Behavior Generation..")
+                    #eprint(error_string)
+                return False,error_string
+    if not regular_nav_present:
+        error_string = "You haven't added regularNav subtree. Remember to add the blackboards and include the required file (for agentid and dt)"
+        if debug:
+            eprint(error_string)
+        return False, error_string
+    return True, None
 
 def get_img_from_path(img_path):
     with open(img_path, "rb") as image_file:
