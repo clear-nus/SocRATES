@@ -49,22 +49,47 @@ Note that you can only fill in values for node attributes with "??".
 
     - BT Conditions
         - <IsRobotVisible agent_id="{id}" distance="??" /> : True if robot is in line of sight within ?? metres. 
-        - <IsRobotNearby agent_id="{id}" distance="??" /> : True if robot is within ?? metres of the agent (regardless of line of sight).
-        - <TimeExpiredCondition seconds="??" ts="{dt}", only_once="True"): (Use with Inverter) True if ?? seconds has passed since the first time this node was ticked. Use this to make the agent do something for a fixed amount of time (for example block/follow/lookatrobot).
-        - <RobotSays agent_id="{id}" message="??"/> :  True if robot is saying ??. The possible inputs and their meanings are: 0 (No gesture), 1("WAIT"), 2("PROCEED"),3("ACKNOWLEDGED"),4("EXCUSE ME").
+        - <IsRobotNearby agent_id="{id}" distance="??" /> : True if robot is within ?? metres of the agent (regardless of line of sight).            
+        - <RobotSays agent_id="{id}" message="??"/> :  True if robot is saying ??. The possible inputs and their meanings are: 0 (No gesture), 1("WAIT"), 2("PROCEED"),3("ACKNOWLEDGED"),4("EXCUSE ME"),5("FOLLOW ME"). 
+        - <HumanSays agent_id="{id}" target_id="??" message="??"/> :  True if human with the id = target_id is saying ??. The possible inputs and their meanings are: 0 (No gesture), 1("WAIT"), 2("PROCEED"),3("ACKNOWLEDGED"),4("EXCUSE ME"),5("FOLLOW ME"). This is the same as the number of the human - 1. For example, Human_1 has id = 0 and Human_2 has id = 1
         - <RobotMoved agent_id="{id}"/>: True if the robot is currently moving. 
         - <IsRobotBlocking agent_id="{id}" distance="??"/>: True if the robot is blocking the agent's path and within ?? meters.
-    
+         - <TimeExpiredCondition seconds="??" ts="{dt}", only_once="??"): (Use with Inverter) Use this to make the agent do something for a fixed amount of time (for example block/follow/lookatrobot):
+            Whatever you place after this within a sequence will be done for ?? seconds. If only_once='True', then once the timer is activated, whatever nodes follow this in a sequence will be done for that long and then never again. 
+            To keep doing something every ?? seconds constantly you can set only_once='False'
+            For example, observe the following sequence:
+                <Sequence name='NoticeAndGiveWay'>
+                        <Inverter>
+                            <TimeExpiredCondition seconds='1.0' ts='{dt}' only_once='True'/>
+                        </Inverter>
+                        <IsRobotNearby agent_id='{id}' distance='2.0'/>
+                        <MakeGesture agent_id='{id}' message='2'/>
+                        <GiveWaytoRobot agent_id='{id}' time_step='{dt}'/>
+                </Sequence>
+                in this sequence, the agent will wait for 1 second and then the timer is up, so the rest of the nodes will never be run. 
+            Now observe this sequence:
+                <Sequence name='NoticeAndGiveWay'>
+                    <IsRobotNearby agent_id='{id}' distance='2.0'/>
+                    <Inverter>
+                        <TimeExpiredCondition seconds='1.0' ts='{dt}' only_once='False'/>
+                    </Inverter>
+                    <MakeGesture agent_id='{id}' message='2'/>
+                    <GiveWaytoRobot agent_id='{id}' time_step='{dt}'/>
+                </Sequence>
+                In this case, the agent will constantly check if the robot is nearby, then at every 1 second, it will make a gesture and give way to the robot
+
     - Note: In the simulator, for distance, 0.5 is considered very close, 1.0 is considered close, 2.0 is considered moderate distance and 5.0 is considered far
     - BT Actions:
         - <MakeGesture agent_id="{id}" message="??"/>: Makes the agent perform a gesture. Choices are: [0 (No gesture), 1("WAIT"), 2("PROCEED"), 3("EXCUSE ME")]. Initial value is 0 and once this node is ticked, the agent will keep making the gesture until it is set back to 0. 
         - <RegularNav agent_id="{id}" time_step="{dt}"/> : Makes the agent perform standard social-force-model based motion planning, where the robot is treated as a normal obstacle.
         - <LookAtRobot agent_id="{id}" /> : Makes the agent look in the direction of the robot
         - <FollowRobot agent_id="{id}" time_step="{dt}"/>: Makes the agent follow the robot
-        - <AvoidRobot agent_id="{id}" time_step="{dt}"/>: Makes the agent overly avoid the robot.
+        - <FollowHuman agent_id="{id}" target_id="??" time_step="{dt}"/>: Makes the agent follow the human with a specific target_id (= ??). This is the same as the number of the human - 1. For example, Human_1 has id = 0 and Human_2 has id = 1
+        - <RunAwayFromRobot agent_id="{id}" time_step="{dt}"/>: Makes the agent run away from the robot in a scared manner
         - <GiveWaytoRobot agent_id="{id}" time_step="{dt}"/>: Makes the agent give way to the robot.
         - <BlockRobot agent_id="{id}" time_step="{dt}"/>: Makes the agent move in front of the robot and block it
     - Note that all these actions run perpetually unless they are put within an inverted TimeExpiredCondition block or after a condition. 
+    - Note that generally, conditions should be followed by actions. It is rarely the case that an action is followed by a condition.
          - Example:
          1. Make the agent follow the robot perpetually:
             <Sequence name='follow_robot_perpetually'>
