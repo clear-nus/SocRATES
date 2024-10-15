@@ -1,0 +1,39 @@
+experiment_name: first_exp
+paths:
+  save_dir: 'scenarios'
+  hunav_gazebo_wrapper_dir: '/home/shashank/catkin_ws/src/hunav_gazebo_wrapper'
+  hunav_sim_dir: '/home/shashank/catkin_ws/src/hunav_sim'
+
+# Scenario Generation inputs
+location:
+  name: 'Warehouse'
+  description: 'Small Warehouse that consists of various racks and packaging areas. The warehouse consists of passageways (narrow and wide), intersections, narrow aisles, corners, open areas.'
+  scene_graph_file:       /home/shashank/code/packages/SoNaS/locations/small_warehouse/scene_graph/scene_graph.json
+  annotated_map_img_file: /home/shashank/code/packages/SoNaS/locations/small_warehouse/scene_graph/scene_graph.png
+  map_params_file:        /home/shashank/code/packages/SoNaS/locations/small_warehouse/map/map.yaml
+
+context: "Robot is a delivery robot in a busy warehouse with employees moving about racks and performing daily duties."
+task: "Robot is tasked to clean the warehouse."
+rough_scenario: "A human that keeps annoying the robot by getting in its way" #"The robot exits a narrow aisle when an employee tries to enter it"
+
+use_handcrafted_scenario: false
+
+load_scenario_response: false
+load_trajectory_response: false
+load_bt_response: false
+
+handcrafted_scenario:
+  scenario:
+    scenariodescription: 
+    numberofhumans: 
+    humanbehavior:
+      human1:
+      human2:
+
+  trajectories:
+    Robot: 
+    human1: 
+    human2: 
+  groupids:
+    human1: 
+    human2: 

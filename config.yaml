@@ -1,0 +1,44 @@
+hunav_sim:
+  agents_file: 'hunav_agent_manager/config/custom_agents.yaml'
+  bt_dir: 'hunav_agent_manager/behavior_trees'
+  cpp_dir: 'hunav_agent_manager/src'
+  hpp_dir: 'hunav_agent_manager/include/hunav_agent_manager'
+
+model:
+ model_type: "gpt"  # "gemini-1.0-pro-vision"
+ model_name: "gpt-4o-2024-08-06"
+
+num_scenario_proposals: 5
+
+retry_count: 3
+debug: false
+
+node_library:
+  root: ['main_tree_to_execute']
+  BehaviorTree: ['ID']
+  include: ['path']
+  SetBlackboard: ['output_key', 'value']
+  Sequence: ['name']
+  Fallback: ['name']
+  SubTree: ['ID']
+  Inverter: []
+  IsRobotVisible: ['agent_id', 'distance']
+  IsRobotNearby: ['agent_id', 'distance']
+  IsGoalReached: ['agent_id']
+  TimeExpiredCondition: ['seconds', 'ts', 'only_once']
+  RobotSays: ['agent_id', 'message']
+  RobotMoved: ['agent_id']
+  IsRobotBlocking: ['agent_id', 'distance']
+  UpdateGoal: ['agent_id']
+  MakeGesture: ['agent_id', 'message']
+  RegularNav: ['agent_id', 'time_step']
+  LookAtRobot: ['agent_id']
+  FollowRobot: ['agent_id', 'time_step']
+  AvoidRobot: ['agent_id', 'time_step']
+  GiveWaytoRobot: ['agent_id', 'time_step']
+  BlockRobot: ['agent_id', 'time_step']
+
+
+scenario_file: '/home/shashank/code/packages/SoNaS/responses/scenario.json'
+trajectory_file: '/home/shashank/code/packages/SoNaS/responses/trajectory.json'
+bt_file: '/home/shashank/code/packages/SoNaS/responses/bt.json'

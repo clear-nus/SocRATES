@@ -1,6 +1,6 @@
-
 import base64
 import json
+from os import error
 import tiktoken
 import math
 import io
@@ -13,9 +13,179 @@ from PIL import Image as PILImage
 import random
 from termcolor import colored
 import pprint
+import xml.etree.ElementTree as ET
+from termcolor import cprint
+from pydantic import BaseModel,StrictInt,PositiveInt
+class HumanTraj(BaseModel):
+    name: str
+    groupid: StrictInt
+    trajectory: list[str]
+    interaction_point: str
+    
+class Trajectories(BaseModel):
+    robot: list[str]
+    humans: list[HumanTraj]
 
-def pix2world(px):
-    return [-1.0*((px[1]/3.0034965034965) * 0.050000 + -7.000) ,-1*((px[0]/2.6604554865424) * 0.050000 + -10.500000)]
+class StructuredScenarioReasoning(BaseModel):
+    scenario_importance: str
+    simulating_humans: list[str]
+    
+class StructuredTrajResponse(BaseModel):
+    reasoning: str
+    trajectories: Trajectories
+
+class StructuredBTResponse(BaseModel):
+    reasoning: str
+    tree_description:str
+    tree: str
+    
+class Behavior(BaseModel):
+    name: str
+    behavior: str
+    
+class StructuredScenarioResponse(BaseModel):
+    scenariodescription: str
+    numberofhumans: int
+    humanbehavior: list[Behavior]
+    reasoning: StructuredScenarioReasoning
+    
+
+eprint = lambda x:cprint(x,'red') #error
+iprint = lambda x:cprint(x,'yellow') #user input
+rprint = lambda x:cprint(x,'green') #result
+lprint = lambda x:cprint(x,'blue') #log
+
+def parse_questions_answers(file_path):
+    questions_answers = []
+
+    # Open the file and read its contents
+    with open(file_path, 'r') as file:
+        content = file.read()
+
+    # Split the content by the separator "*****"
+    qa_pairs = content.split("*****")
+
+    # Iterate over each QA pair
+    for qa in qa_pairs:
+        if qa.strip():  # Ensure the string is not empty
+            lines = qa.strip().splitlines()
+
+            # Initialize variables to hold the question and answer
+            question_lines = []
+            answer_lines = []
+            current_section = None
+
+            # Parse each line to separate question and answer
+            for line in lines:
+                if line.startswith("Q:"):
+                    current_section = "question"
+                    question_lines.append(line[2:].strip())
+                elif line.startswith("A:"):
+                    current_section = "answer"
+                    answer_lines.append(line[2:].strip())
+                else:
+                    # Append to the current section (either question or answer)
+                    if current_section == "question":
+                        question_lines.append(line.strip())
+                    elif current_section == "answer":
+                        answer_lines.append(line.strip())
+
+            # Join the lines to form complete question and answer texts
+            question = "\n".join(question_lines).strip()
+            answer = "\n".join(answer_lines).strip()
+
+            if question and answer:
+                questions_answers.append((question, answer))
+
+    return questions_answers
+
+def validate_bt(tree,node_library,debug=False):
+    regular_nav_present = False
+    if len(tree.find('BehaviorTree'))!=1:
+        error_string = "Behavior Tree node can have only a single child"
+        if debug:
+            eprint("Retrying Behavior Generation..")
+            #eprint(error_string)
+        return False,error_string
+    
+    for elem in tree.iter():
+        if elem.tag not in node_library:
+            error_string = f'{elem.tag} not in node_library'
+            if debug:
+                eprint("Retrying Behavior Generation..")
+                #eprint(error_string)
+            return False,error_string
+        
+        if elem.tag == 'SubTree':
+            if elem.attrib!={'ID': 'RegularNavTree', 'id': 'agentid', 'dt': 'timestep'}:
+                error_string = """RegularNav's attributes are wrong, it should be: <Sequence name='RegNav'>
+                <SetBlackboard output_key='agentid' value='{id}'/>
+                <SetBlackboard output_key='timestep' value='{dt}'/>
+                <SubTree ID='RegularNavTree' id='agentid' dt='timestep'/>
+            </Sequence>"""
+                if debug:
+                    eprint("Retrying Behavior Generation..")
+                    #eprint(error_string)
+                return False,error_string
+            #check if RegularNav is included for SubTree
+            included_files = tree.findall('.//include')
+            if len(included_files)!=1:
+                error_string = "File for regularnav is not included. Add it after the root element:  <include path='BTRegularNav.xml'/>"
+                if debug:
+                    eprint("Retrying Behavior Generation..")
+                    #eprint(error_string)
+                return False, error_string
+            if included_files[0].attrib != {'path': 'BTRegularNav.xml'}:
+                error_string = "Path of the included file for regularnav is wrong. The correct way is: <include path='BTRegularNav.xml'/>"
+                if debug:
+                    eprint("Retrying Behavior Generation..")
+                    #eprint(error_string)
+                return False,error_string
+            regular_nav_present = True
+            continue
+         
+        #check for incorrect nodes
+        for k,v in elem.attrib.items():
+            if k not in node_library[elem.tag]:
+                error_string = f'{k} not in node_library[{elem.tag}]'
+                if debug:
+                    eprint("Retrying Behavior Generation..")
+                    #eprint(error_string)
+                return False,error_string
+            if k == 'agent_id':
+                if v!="""{id}""":
+                    error_string = """Incorrect agent id. Only use "agent_id" in the nodes, nothing else"""
+                    if debug:
+                        eprint("Retrying Behavior Generation..")
+                        #eprint(error_string)
+                    return False,error_string
+            
+        #check if all attributes are correct
+        if len(node_library[elem.tag])!=len(elem.attrib.keys()):
+            error_string = f"{node_library[elem.tag]} has incorrect attributes. They should be: {node_library[elem.tag]}"
+            if debug:
+                eprint("Retrying Behavior Generation..")
+                #eprint(error_string)
+            return False,error_string
+        
+        for v in node_library[elem.tag]:
+            if v not in list(elem.attrib.keys()):
+                error_string = f"{node_library[elem.tag]} has incorrect attributes. They should be: {node_library[elem.tag]}"
+                if debug:
+                    eprint("Retrying Behavior Generation..")
+                    #eprint(error_string)
+                return False,error_string
+    if not regular_nav_present:
+        error_string = "You haven't added regularNav subtree. Remember to add the blackboards and include the required file (for agentid and dt)"
+        if debug:
+            eprint(error_string)
+        return False, error_string
+    return True, None
+
+def get_img_from_path(img_path):
+    with open(img_path, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read())
+    return encoded_string.decode("utf-8")
 
 def filter_scene_graph(scene_graph, node_type_to_remove):
     #for simple serialized dict graphs
@@ -35,6 +205,7 @@ def filter_scene_graph(scene_graph, node_type_to_remove):
     
     # Create the new scene graph structure to return
     return G
+
 def load_imgs_for_prompt(img_path):
     dims = PILImage.open(img_path).size
     img_cost = calculate_image_token_cost(dims)
@@ -109,7 +280,8 @@ def get_image_bytes_from_url(image_url: str) -> bytes:
 
 def load_image_from_url(image_url: str) -> Image:
     image_bytes = get_image_bytes_from_url(image_url)
-    return Image.from_bytes(image_bytes)
+    return Image.from_bytes(image_bytes)    
+    
 
 def num_tokens_from_messages(message: Mapping[str, object], model: str) -> int:
     """
@@ -195,121 +367,3 @@ def createHuman(agents_file,bt_file,params):
         f.write(params['bt'])
 
 
-class SceneGraph:
-    def __init__(self, serialized_graph):
-        '''
-        Nodes have attributes:
-            - type
-            - ID (name)
-            - position (pixel)
-        '''
-        self.graph = nx.node_link_graph(serialized_graph) #nx graph
-        nx.set_edge_attributes(self.graph, {e: self.dist(e[0],e[1]) for e in self.graph.edges()}, "cost")            
-
-    def get_parent_nodes(self):
-        '''
-        This function returns the parent nodes in the graph
-        '''
-        return [n for n in self.graph.nodes if self.graph.nodes[n]['type']!='child']
-
-    def dist(self,n1,n2):
-        (x1,y1) = self.graph.nodes[n1]['pos']
-        (x2,y2) = self.graph.nodes[n2]['pos']
-        return ((x1-x2)**2+(y1-y2)**2)**0.5        
-
-    def sampleNodeOfType(self,node_type):
-        '''
-        This function samples nodes in the graph that are of the input type
-        '''
-        nodes = [n for n in self.graph.nodes if self.graph.nodes[n]['type']==node_type]
-        if len(nodes)==0:
-            return f"No node of type {node_type} exists in the graph"
-        return random.choice(nodes)
-        
-    def relativeDirection(self,node1,node2):
-        '''
-        This function returns the relative direction between two nodes.
-        for example, 'right,below' means that node1 is to the right and below node2
-        '''
-        try:
-            (x1,y1) = self.graph.nodes[node1]['pos']
-            (x2,y2) = self.graph.nodes[node2]['pos']
-        except KeyError:
-            return "These nodes don't exist in the graph"
-        direction = [None,None]
-        if x1>=x2:
-            direction[0] = 'right'
-        elif x1<=x2:
-            direction[0] = 'left'
-        elif y1>=y2:
-            direction[1] = 'below'
-        elif y1<=y2:
-            direction[1] = 'above'
-        else:
-            return 'None'
-        return direction
-    
-    def connectedNodes(self,node):
-        '''
-        This function returns all the neighbours of the input node and their types and distance from the node
-        '''
-        cnodes = 'None'
-        try:
-            neighbours =  list(self.graph.neighbors(node))
-            cnodes = {}
-            for c in neighbours:
-                cnodes[self.graph.nodes[c]] = self.graph.edges[(node,c)]['cost']
-        except nx.NetworkXError:
-            return "No such node exists in the graph"
-        return cnodes
-    
-    
-    def planPath(self,node1,node2):
-        '''
-        This function finds the shortest path between node1 and node2
-        '''
-        # returns -1 if no path exists
-        cost = 0
-        try:
-            path =  nx.astar_path(self.graph,node1,node2, weight = "cost")
-            n1 = path[0]
-            if len(path) > 1:
-                for n in path[1:]:
-                    cost += self.graph.edges[n1,n]["cost"]
-                    n1 = n
-        except nx.NetworkXNoPath:
-            cost = -1
-        return cost
-    
-    def isvalidtrajectory(self,trajectory):
-        #checks if a given node sequence is valid or not and returns the errors
-        #input: trajectory: sequence of node names in the graph
-        errors = []
-        traj_valid = True
-        for first,second in zip(trajectory,trajectory[1:]):
-            if (first,second) not in self.graph.edges:
-                errors.append((first,second))
-                traj_valid = False
-        return traj_valid, errors
-        
-    
-def gpt_function_call(graph,message):
-    for msg in message:
-        fn_name = msg.message.function_call.name()
-        fn_arguments = json.loads(msg.message.function_call.arguments)
-        try:
-            if fn_name == 'closestNodeOfType':
-                graph.closestNodeOfType()    
-            elif fn_name == "connectedNodes":
-                graph.connectedNodes()
-            elif fn_name == "closestNodes":
-                graph.closestNodes()
-            elif fn_name == "pathLength":
-                graph.pathLength()
-            else:
-                raise Exception("Function not found")
-            
-        except Exception as e:
-            print(f"Function Execution Failed")
-            print(e)
-            

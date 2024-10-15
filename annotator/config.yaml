@@ -1,0 +1,7 @@
+img: /home/shashank/catkin_ws/src/hunav_gazebo_wrapper/worlds/small_warehouse/map/map.pgm
+out: /home/shashank/code/packages/SoNaS/locations/small_warehouse/scene_graph.png
+scg: /home/shashank/code/packages/SoNaS/locations/small_warehouse/scene_graph.json
+node_types: ['INTERSECTION','OPEN AREA','SIMPLE NODE','BLIND CORNER','ENTRANCE/EXIT',]
+edge_types: ['PASSAGEWAY','NARROW PASSAGEWAY','SIMPLE EDGE','NARROW AISLE']
+zoom_in: 5.0
+zoom_out: 5.0

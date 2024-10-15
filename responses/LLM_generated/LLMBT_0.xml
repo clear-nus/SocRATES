@@ -1,9 +1,0 @@
-<root main_tree_to_execute='HumanFollowRobotTree'>
-    <BehaviorTree ID='HumanFollowRobotTree'>
-        <Sequence name='FollowRobotSequence'>
-            <IsRobotVisible agent_id='{id}' distance='4.0'/>
-            <RobotSays agent_id='{id}' message='2'/>
-            <FollowRobot agent_id='{id}' time_step='{dt}'/>
-        </Sequence>
-    </BehaviorTree>
-</root>

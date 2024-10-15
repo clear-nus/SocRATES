@@ -1,5 +1,0 @@
-"""Robot start inside a narrow aisle(NODE 79). There is human standing at the opposite end of the aisle, the human stand its position until the robot isn not blocking path, once the robot is not blocking the human, the human starts moving towards its goal in the aisle"""
-
-"the robot takes a turn at a blind corner, and encounters a human immediately. The human only sees the robot when its very close and just stops completely until the robot is not blocking it anymore."
-
-while transporting the box from one location to another, the robot comes across a group of 3 humans. The human check if the the robot says excuse me and if yes, then they give way to the robot until its not close anymore. If the robot doesnt say excuse me, they continue standing in the group"""
