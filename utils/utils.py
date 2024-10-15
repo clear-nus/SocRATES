@@ -28,6 +28,7 @@ class Trajectories(BaseModel):
 
 class StructuredScenarioReasoning(BaseModel):
     scenario_importance: str
+    num_humans: int
     simulating_humans: list[str]
     
 class StructuredTrajResponse(BaseModel):
@@ -48,7 +49,12 @@ class StructuredScenarioResponse(BaseModel):
     numberofhumans: int
     humanbehavior: list[Behavior]
     reasoning: StructuredScenarioReasoning
-    
+    expected_robot_behavior: str
+
+class StructuredResponse(BaseModel):
+    scenario: StructuredScenarioResponse
+    behavior: list[StructuredBTResponse]
+    trajectories: StructuredTrajResponse  
 
 eprint = lambda x:cprint(x,'red') #error
 iprint = lambda x:cprint(x,'yellow') #user input
@@ -105,7 +111,14 @@ def validate_bt(tree,node_library,debug=False):
         error_string = "Behavior Tree node can have only a single child"
         if debug:
             eprint("Retrying Behavior Generation..")
-            #eprint(error_string)
+            eprint(error_string)
+        return False,error_string
+    
+    set_blackboard_nodes = tree.findall(".//SetBlackboard")
+    #there should be a multiple of 2 blackboard nodes
+    if len(set_blackboard_nodes)%2!=0:
+        eprint("SetBlackBoard Problem")
+        error_string = "Theres a problem with the SetBlackboard node. Have you used too many unnecesarily or too few? Remmeber that SetBlackBoard can only be used for regular navigation"
         return False,error_string
     
     for elem in tree.iter():
@@ -113,7 +126,7 @@ def validate_bt(tree,node_library,debug=False):
             error_string = f'{elem.tag} not in node_library'
             if debug:
                 eprint("Retrying Behavior Generation..")
-                #eprint(error_string)
+                eprint(error_string)
             return False,error_string
         
         if elem.tag == 'SubTree':
@@ -125,7 +138,7 @@ def validate_bt(tree,node_library,debug=False):
             </Sequence>"""
                 if debug:
                     eprint("Retrying Behavior Generation..")
-                    #eprint(error_string)
+                    eprint(error_string)
                 return False,error_string
             #check if RegularNav is included for SubTree
             included_files = tree.findall('.//include')
@@ -133,13 +146,13 @@ def validate_bt(tree,node_library,debug=False):
                 error_string = "File for regularnav is not included. Add it after the root element:  <include path='BTRegularNav.xml'/>"
                 if debug:
                     eprint("Retrying Behavior Generation..")
-                    #eprint(error_string)
+                    eprint(error_string)
                 return False, error_string
             if included_files[0].attrib != {'path': 'BTRegularNav.xml'}:
                 error_string = "Path of the included file for regularnav is wrong. The correct way is: <include path='BTRegularNav.xml'/>"
                 if debug:
                     eprint("Retrying Behavior Generation..")
-                    #eprint(error_string)
+                    eprint(error_string)
                 return False,error_string
             regular_nav_present = True
             continue
@@ -150,14 +163,14 @@ def validate_bt(tree,node_library,debug=False):
                 error_string = f'{k} not in node_library[{elem.tag}]'
                 if debug:
                     eprint("Retrying Behavior Generation..")
-                    #eprint(error_string)
+                    eprint(error_string)
                 return False,error_string
             if k == 'agent_id':
                 if v!="""{id}""":
                     error_string = """Incorrect agent id. Only use "agent_id" in the nodes, nothing else"""
                     if debug:
                         eprint("Retrying Behavior Generation..")
-                        #eprint(error_string)
+                        eprint(error_string)
                     return False,error_string
             
         #check if all attributes are correct
@@ -165,7 +178,7 @@ def validate_bt(tree,node_library,debug=False):
             error_string = f"{node_library[elem.tag]} has incorrect attributes. They should be: {node_library[elem.tag]}"
             if debug:
                 eprint("Retrying Behavior Generation..")
-                #eprint(error_string)
+                eprint(error_string)
             return False,error_string
         
         for v in node_library[elem.tag]:
@@ -173,7 +186,7 @@ def validate_bt(tree,node_library,debug=False):
                 error_string = f"{node_library[elem.tag]} has incorrect attributes. They should be: {node_library[elem.tag]}"
                 if debug:
                     eprint("Retrying Behavior Generation..")
-                    #eprint(error_string)
+                    eprint(error_string)
                 return False,error_string
     if not regular_nav_present:
         error_string = "You haven't added regularNav subtree. Remember to add the blackboards and include the required file (for agentid and dt)"
