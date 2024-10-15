@@ -50,7 +50,7 @@ class QueryHandler:
             return None           
         return scq_response_structured
     
-    def query_traj(self, scene_graph_json,node_types,edge_types,encoded_img,scenario_description):
+    def query_traj(self, scene_graph_json,node_types,edge_types,encoded_img,scenario_description,num_humans):
         '''
         Queries the LLM for waypoints for human and robot (at once)
         '''    
@@ -102,6 +102,32 @@ class QueryHandler:
                     all_human_traj = [h.trajectory for h in human_traj]
                     reasoning = trq_response_structured.reasoning
                     #test trajectory correctness
+                    if len(all_human_traj)!=num_humans:
+                        error_string = f"""You haven't added trajectory for all humans! there should be {num_humans} in the scene!"""
+                        payload.append(
+                            {
+                                "role":"assistant",
+                                "content":[
+                                    {
+                                        "type":"text",
+                                        "text": trq_response_structured.json()
+                                    }
+                                ]
+                            }    
+                            )
+                        payload.append({
+                                "role": "user", 
+                                "content": [
+                                    {
+                                        "type":"text",
+                                        "text": reply.replace('<ERRORS>',error_string)
+                                    }
+                                        ]
+                                    }
+                                    )
+                        retr_traj+=1
+                        continue
+                    
                     for v in [robot_traj] + all_human_traj:
                         traj_valid,errors = scgraph.isvalidtrajectory(v)
                         if not traj_valid: #requery LLM with error message
@@ -109,7 +135,6 @@ class QueryHandler:
                             error_string = ""
                             for err in errors:
                                 error_string+=f"There is no edge connecting {err[0]} and {err[1]}!\n"
-
                     if not all_trajectories_valid:                        
                         if self.debug:
                                 eprint("Disconnected Trajectory Output, Retrying")    
@@ -188,7 +213,7 @@ class QueryHandler:
             return None
         
     def edit_traj(self, scene_graph_json,node_types,edge_types,encoded_img,scenario_description,edits,
-            prev_output):
+            prev_output,num_humans):
         '''
         Queries the LLM for waypoints for human and robot (at once)
         '''    
@@ -235,7 +260,7 @@ class QueryHandler:
                             }    
                         )
             payload.append(last_msg)
-            payload[-1]['content'][-1]['text']+=f" \n Minimally change your previous response to incorporate these comments: (ensure that the new trajectories are still valid): {edits}"
+            payload[-1]['content'][-1]['text']+=f" \n CHANGE YOUR PREVIOUS TRAJECTORY TO SUIT THIS REQUEST: (ensure that the new trajectories are still valid): {edits}"
             retr_traj = 0
             valid_trajectories = False
             with attempt:
@@ -254,6 +279,31 @@ class QueryHandler:
                     all_human_traj = [h.trajectory for h in human_traj]
                     reasoning = trq_response_structured.reasoning
                     #test trajectory correctness
+                    if len(all_human_traj)!=num_humans:
+                        error_string = f"""You haven't added trajectory for all humans! there should be {num_humans} in the scene!"""
+                        payload.append(
+                            {
+                                "role":"assistant",
+                                "content":[
+                                    {
+                                        "type":"text",
+                                        "text": trq_response_structured.json()
+                                    }
+                                ]
+                            }    
+                            )
+                        payload.append({
+                                "role": "user", 
+                                "content": [
+                                    {
+                                        "type":"text",
+                                        "text": reply.replace('<ERRORS>',error_string)
+                                    }
+                                        ]
+                                    }
+                                    )
+                        retr_traj+=1
+                        continue
                     for v in [robot_traj] + all_human_traj:
                         traj_valid,errors = scgraph.isvalidtrajectory(v)
                         if not traj_valid: #requery LLM with error message
@@ -378,6 +428,7 @@ class QueryHandler:
                         if not btq_response_structured:
                             raise ValueError('Invalid model response')
                         try:
+                            btq_response_structured.tree = btq_response_structured.tree.replace("""<?xml version='1.0' encoding='utf-8'?>""",'')
                             test_xml = ET.fromstring(btq_response_structured.tree)  
                             if self.debug:
                                 lprint("Recieved Valid XML")
@@ -395,7 +446,7 @@ class QueryHandler:
                                 ]
                             })
                             payload.append({
-                                "role":"user",
+                                "role":"user",  
                                 "content":[
                                     {
                                         "type":"text",
@@ -407,10 +458,11 @@ class QueryHandler:
                         
                         bt_valid, errors = utils.validate_bt(test_xml,node_library,self.debug)
                         if bt_valid:
-                            lprint(f"Recieved Valid BT:")
-                            print(btq_response_structured.tree_description)
+                            lprint(f"Recieved Valid BT:")                                
+                            rprint(f'Description:\n{btq_response_structured.tree_description}')
                             if self.debug:
-                                pprint.pprint(btq_response_structured.tree)
+                                print("Raw behavior tree: \n")
+                                print(btq_response_structured.tree)
                             return btq_response_structured
                         else:
                             eprint("Recieved Invalid BT")

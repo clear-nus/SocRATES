@@ -8,8 +8,8 @@ A ROS2-Gazebo scenario generator for evaluating social navigation algorithms uti
 
 SoNAS consists of 3 submodules: 
     - A scenario generation module that queries LLMs in a structured manner to generate parameters and files for simulating a scenario
-    - [Modified version of Hunavsim](https://github.com/robotics-upo/hunav_sim)
-    - [Modified version of the Hunavsim wrapper for gazebo](https://github.com/robotics-upo/hunav_gazebo_wrapper)
+    - [Modified version of Hunavsim](https://github.com/raoshashank/hunav_sim)
+    - [Modified version of the Hunavsim wrapper for gazebo](https://github.com/raoshashank/hunav_gazebo_wrapper)
     - For the 2 ROS2 packages, clone the submodules into your catkin workspace and build with the ROS2 ```colcon``` tool
 ## Generating your own scenarios
 You can generate a scenario in 3 steps:

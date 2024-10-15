@@ -1,39 +1,21 @@
-experiment_name: first_exp
+experiment_name: test
 paths:
-  save_dir: 'scenarios'
-  hunav_gazebo_wrapper_dir: '/home/shashank/catkin_ws/src/hunav_gazebo_wrapper'
-  hunav_sim_dir: '/home/shashank/catkin_ws/src/hunav_sim'
+  save_dir: ''
+  hunav_gazebo_wrapper_dir: ''
+  hunav_sim_dir: ''
+
+location:
+  name: 'small_warehouse'
+  description:  "Small Warehouse that consists of various racks and packaging areas. The warehouse consists of passageways, intersections, narrow aisles, corners, open areas"
+  scene_graph_file:       annotator/locations/small_warehouse/scene_graph.json
+  annotated_map_img_file: annotator/locations/small_warehouse/scene_graph.png
+  map_params_file:       annotator/locations/small_warehouse/map.yaml
 
 # Scenario Generation inputs
-location:
-  name: 'Warehouse'
-  description: 'Small Warehouse that consists of various racks and packaging areas. The warehouse consists of passageways (narrow and wide), intersections, narrow aisles, corners, open areas.'
-  scene_graph_file:       /home/shashank/code/packages/SoNaS/locations/small_warehouse/scene_graph/scene_graph.json
-  annotated_map_img_file: /home/shashank/code/packages/SoNaS/locations/small_warehouse/scene_graph/scene_graph.png
-  map_params_file:        /home/shashank/code/packages/SoNaS/locations/small_warehouse/map/map.yaml
-
-context: "Robot is a delivery robot in a busy warehouse with employees moving about racks and performing daily duties."
-task: "Robot is tasked to clean the warehouse."
-rough_scenario: "A human that keeps annoying the robot by getting in its way" #"The robot exits a narrow aisle when an employee tries to enter it"
-
-use_handcrafted_scenario: false
+context: "Delivery robot in a busy warehouse. Employees are moving around during the break time, they are rushing to get back to work."
+task: "Deliver coffee from one corner of the warehouse to another."
+rough_scenario: "there are 2 humans in the scenario, they are in a group, 1 person runs away from the robot upon seeing it, other one follows the robot"
 
 load_scenario_response: false
 load_trajectory_response: false
 load_bt_response: false
-
-handcrafted_scenario:
-  scenario:
-    scenariodescription: 
-    numberofhumans: 
-    humanbehavior:
-      human1:
-      human2:
-
-  trajectories:
-    Robot: 
-    human1: 
-    human2: 
-  groupids:
-    human1: 
-    human2: 

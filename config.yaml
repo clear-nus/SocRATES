@@ -27,6 +27,7 @@ node_library:
   IsGoalReached: ['agent_id']
   TimeExpiredCondition: ['seconds', 'ts', 'only_once']
   RobotSays: ['agent_id', 'message']
+  HumanSays: ['agent_id','target_id','message']
   RobotMoved: ['agent_id']
   IsRobotBlocking: ['agent_id', 'distance']
   UpdateGoal: ['agent_id']
@@ -34,11 +35,27 @@ node_library:
   RegularNav: ['agent_id', 'time_step']
   LookAtRobot: ['agent_id']
   FollowRobot: ['agent_id', 'time_step']
-  AvoidRobot: ['agent_id', 'time_step']
+  FollowHuman: ['agent_id','target_id','time_step']
+  RunAwayFromRobot: ['agent_id', 'time_step']
   GiveWaytoRobot: ['agent_id', 'time_step']
   BlockRobot: ['agent_id', 'time_step']
+  
+scenario_file: 'responses/scenario.json'
+trajectory_file: 'responses/trajectory.json'
+bt_file: 'responses/bt.json'
 
+use_handcrafted_scenario: false
+handcrafted_scenario:
+  scenario: 
+    scenariodescription:
+    numberofhumans:
+    humanbehavior:
+      human1:
+      human2:
 
-scenario_file: '/home/shashank/code/packages/SoNaS/responses/scenario.json'
-trajectory_file: '/home/shashank/code/packages/SoNaS/responses/trajectory.json'
-bt_file: '/home/shashank/code/packages/SoNaS/responses/bt.json'
+  trajectories:
+    Robot: 
+    human1: 
+    human2: 
+  groupids:
+    human1: 
