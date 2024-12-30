@@ -61,3 +61,16 @@ source install/setup.bash
 
 
 - You can finetune the scenario parameters by modifying the saved files in the ```responses``` directory and setting the ```load``` parameters (like ```load_scenario_response```) to true and then running ```python main.py```. This will not regenerate the scenario, but update the gazebo simulation. 
+### Citing
+```
+To cite our work, please use:
+@misc{marpally2024socratesautomatedscenariobasedtesting,
+      title={SocRATES: Towards Automated Scenario-based Testing of Social Navigation Algorithms}, 
+      author={Shashank Rao Marpally and Pranav Goyal and Harold Soh},
+      year={2024},
+      eprint={2412.19595},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2412.19595}, 
+}
+```
