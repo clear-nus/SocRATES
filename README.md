@@ -1,4 +1,4 @@
-# This package contains code for the paper: ["Towards Automated Scenario Testing of Social Navigation Algorithms"](https://unsolvedsocialnav.org/papers/Marpally.pdf)
+# This package contains code for the paper: ["SocRATES: Towards Automated Scenario-based Testing of Social Navigation Algorithms"](https://arxiv.org/abs/2412.19595)
 A ROS2-Gazebo scenario generator for evaluating social navigation algorithms utilizing LLMs and [Hunavsim](https://github.com/robotics-upo/hunav_sim)
 ![](imgs/pipeline.png)
 ![](imgs/sample_generated_scenarios.jpeg)
